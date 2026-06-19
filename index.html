@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claude Chat</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0f0f0f;
+      color: #e8e8e8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Setup screen ── */
+    #setup {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .setup-card {
+      background: #1a1a1a;
+      border: 1px solid #2e2e2e;
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .setup-card h1 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      color: #f0f0f0;
+    }
+
+    .setup-card p {
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 2rem;
+      line-height: 1.5;
+    }
+
+    .setup-card p a {
+      color: #a78bfa;
+      text-decoration: none;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: #aaa;
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.03em;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 0.65rem 0.9rem;
+      background: #111;
+      border: 1px solid #2e2e2e;
+      border-radius: 8px;
+      color: #f0f0f0;
+      font-size: 0.95rem;
+      margin-bottom: 1.2rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input:focus {
+      border-color: #7c3aed;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 0.7rem;
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-primary:hover { background: #6d28d9; }
+
+    .error-msg {
+      font-size: 0.82rem;
+      color: #f87171;
+      margin-top: 0.8rem;
+      display: none;
+    }
+
+    /* ── Chat screen ── */
+    #chat {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      height: 100vh;
+    }
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1.2rem;
+      border-bottom: 1px solid #1e1e1e;
+      background: #141414;
+    }
+
+    .chat-header span {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #d4d4d4;
+    }
+
+    .btn-reset {
+      font-size: 0.78rem;
+      color: #666;
+      background: none;
+      border: 1px solid #2e2e2e;
+      border-radius: 6px;
+      padding: 0.3rem 0.7rem;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .btn-reset:hover { color: #f87171; border-color: #f87171; }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .msg {
+      display: flex;
+      gap: 0.75rem;
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .msg.user { flex-direction: row-reverse; }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .msg.user .avatar { background: #7c3aed; color: #fff; }
+    .msg.assistant .avatar { background: #1e1e1e; color: #aaa; border: 1px solid #2e2e2e; }
+
+    .bubble {
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      font-size: 0.92rem;
+      line-height: 1.65;
+      max-width: calc(100% - 44px);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .msg.user .bubble {
+      background: #1d1340;
+      border: 1px solid #2d1f6e;
+      color: #d4c6ff;
+      border-radius: 12px 4px 12px 12px;
+    }
+
+    .msg.assistant .bubble {
+      background: #1a1a1a;
+      border: 1px solid #2e2e2e;
+      color: #e0e0e0;
+      border-radius: 4px 12px 12px 12px;
+    }
+
+    .thinking {
+      display: flex;
+      gap: 4px;
+      padding: 0.6rem 0.2rem;
+    }
+
+    .thinking span {
+      width: 6px;
+      height: 6px;
+      background: #555;
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+
+    .thinking span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-6px); }
+    }
+
+    /* ── Input bar ── */
+    .input-bar {
+      padding: 1rem;
+      border-top: 1px solid #1e1e1e;
+      background: #141414;
+      display: flex;
+      gap: 0.6rem;
+      align-items: flex-end;
+    }
+
+    textarea {
+      flex: 1;
+      background: #1a1a1a;
+      border: 1px solid #2e2e2e;
+      border-radius: 10px;
+      color: #f0f0f0;
+      font-size: 0.92rem;
+      padding: 0.65rem 0.9rem;
+      resize: none;
+      min-height: 44px;
+      max-height: 160px;
+      line-height: 1.5;
+      outline: none;
+      transition: border-color 0.15s;
+      font-family: inherit;
+    }
+
+    textarea:focus { border-color: #7c3aed; }
+
+    .btn-send {
+      width: 42px;
+      height: 42px;
+      background: #7c3aed;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    .btn-send:hover { background: #6d28d9; }
+    .btn-send:disabled { background: #2e2e2e; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+<!-- Setup screen -->
+<div id="setup">
+  <div class="setup-card">
+    <h1>Claude Chat</h1>
+    <p>
+      Enter your <a href="https://console.anthropic.com/settings/keys" target="_blank">Anthropic API key</a>
+      and your Cloudflare Worker URL. Both are saved locally in your browser.
+    </p>
+
+    <label for="workerUrl">Cloudflare Worker URL</label>
+    <input type="text" id="workerUrl" placeholder="https://my-worker.yourname.workers.dev" />
+
+    <label for="apiKey">Anthropic API Key</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-..." />
+
+    <button class="btn-primary" onclick="saveSettings()">Save and start chatting</button>
+    <p class="error-msg" id="setupError"></p>
+  </div>
+</div>
+
+<!-- Chat screen -->
+<div id="chat">
+  <div class="chat-header">
+    <span>Claude Chat</span>
+    <button class="btn-reset" onclick="resetSettings()">Change API key</button>
+  </div>
+  <div class="messages" id="messages"></div>
+  <div class="input-bar">
+    <textarea id="userInput" placeholder="Type a message…" rows="1"
+      onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="btn-send" id="sendBtn" onclick="sendMessage()">&#9658;</button>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY_KEY = "claude_api_key";
+  const STORAGE_WORKER_KEY = "claude_worker_url";
+
+  let history = [];
+  let workerUrl = "";
+  let apiKey = "";
+
+  function init() {
+    const savedKey = localStorage.getItem(STORAGE_KEY_KEY);
+    const savedWorker = localStorage.getItem(STORAGE_WORKER_KEY);
+    if (savedKey && savedWorker) {
+      apiKey = savedKey;
+      workerUrl = savedWorker;
+      showChat();
+    } else {
+      // Pre-fill if partial
+      if (savedWorker) document.getElementById("workerUrl").value = savedWorker;
+      if (savedKey) document.getElementById("apiKey").value = savedKey;
+    }
+  }
+
+  function saveSettings() {
+    const key = document.getElementById("apiKey").value.trim();
+    const url = document.getElementById("workerUrl").value.trim();
+    const err = document.getElementById("setupError");
+
+    if (!key.startsWith("sk-ant-")) {
+      err.textContent = "API key should start with sk-ant-";
+      err.style.display = "block";
+      return;
+    }
+    if (!url.startsWith("https://")) {
+      err.textContent = "Worker URL should start with https://";
+      err.style.display = "block";
+      return;
+    }
+
+    localStorage.setItem(STORAGE_KEY_KEY, key);
+    localStorage.setItem(STORAGE_WORKER_KEY, url);
+    apiKey = key;
+    workerUrl = url;
+    err.style.display = "none";
+    showChat();
+  }
+
+  function resetSettings() {
+    localStorage.removeItem(STORAGE_KEY_KEY);
+    localStorage.removeItem(STORAGE_WORKER_KEY);
+    history = [];
+    document.getElementById("messages").innerHTML = "";
+    document.getElementById("chat").style.display = "none";
+    document.getElementById("setup").style.display = "flex";
+    document.getElementById("apiKey").value = "";
+    document.getElementById("workerUrl").value = "";
+  }
+
+  function showChat() {
+    document.getElementById("setup").style.display = "none";
+    document.getElementById("chat").style.display = "flex";
+    document.getElementById("userInput").focus();
+  }
+
+  function appendMessage(role, text, isThinking = false) {
+    const msgs = document.getElementById("messages");
+    const msg = document.createElement("div");
+    msg.className = `msg ${role}`;
+
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = role === "user" ? "U" : "C";
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+
+    if (isThinking) {
+      bubble.innerHTML = `<div class="thinking"><span></span><span></span><span></span></div>`;
+    } else {
+      bubble.textContent = text;
+    }
+
+    msg.appendChild(avatar);
+    msg.appendChild(bubble);
+    msgs.appendChild(msg);
+    msgs.scrollTop = msgs.scrollHeight;
+    return bubble;
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById("userInput");
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = "";
+    input.style.height = "auto";
+    document.getElementById("sendBtn").disabled = true;
+
+    appendMessage("user", text);
+    history.push({ role: "user", content: text });
+
+    const thinkingBubble = appendMessage("assistant", "", true);
+
+    try {
+      const res = await fetch(workerUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-Key": apiKey,
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1024,
+          messages: history,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.error) {
+        thinkingBubble.textContent = "Error: " + (data.error.message || JSON.stringify(data.error));
+      } else {
+        const reply = data.content?.[0]?.text || "(no response)";
+        thinkingBubble.textContent = reply;
+        history.push({ role: "assistant", content: reply });
+      }
+    } catch (e) {
+      thinkingBubble.textContent = "Network error: " + e.message;
+    }
+
+    document.getElementById("sendBtn").disabled = false;
+    document.getElementById("userInput").focus();
+  }
+
+  function handleKey(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function autoResize(el) {
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 160) + "px";
+  }
+
+  init();
+</script>
+</body>
+</html>
