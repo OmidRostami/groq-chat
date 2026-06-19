@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Claude Chat</title>
+  <title>Gemini Chat</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -48,10 +48,7 @@
       line-height: 1.5;
     }
 
-    .setup-card p a {
-      color: #a78bfa;
-      text-decoration: none;
-    }
+    .setup-card p a { color: #4ade80; text-decoration: none; }
 
     label {
       display: block;
@@ -61,7 +58,6 @@
       letter-spacing: 0.03em;
     }
 
-    input[type="text"],
     input[type="password"] {
       width: 100%;
       padding: 0.65rem 0.9rem;
@@ -75,14 +71,12 @@
       transition: border-color 0.15s;
     }
 
-    input:focus {
-      border-color: #7c3aed;
-    }
+    input:focus { border-color: #16a34a; }
 
     .btn-primary {
       width: 100%;
       padding: 0.7rem;
-      background: #7c3aed;
+      background: #16a34a;
       color: #fff;
       border: none;
       border-radius: 8px;
@@ -92,7 +86,7 @@
       transition: background 0.15s;
     }
 
-    .btn-primary:hover { background: #6d28d9; }
+    .btn-primary:hover { background: #15803d; }
 
     .error-msg {
       font-size: 0.82rem;
@@ -168,7 +162,7 @@
       font-weight: 600;
     }
 
-    .msg.user .avatar { background: #7c3aed; color: #fff; }
+    .msg.user .avatar { background: #16a34a; color: #fff; }
     .msg.assistant .avatar { background: #1e1e1e; color: #aaa; border: 1px solid #2e2e2e; }
 
     .bubble {
@@ -182,9 +176,9 @@
     }
 
     .msg.user .bubble {
-      background: #1d1340;
-      border: 1px solid #2d1f6e;
-      color: #d4c6ff;
+      background: #052e16;
+      border: 1px solid #14532d;
+      color: #bbf7d0;
       border-radius: 12px 4px 12px 12px;
     }
 
@@ -244,12 +238,12 @@
       font-family: inherit;
     }
 
-    textarea:focus { border-color: #7c3aed; }
+    textarea:focus { border-color: #16a34a; }
 
     .btn-send {
       width: 42px;
       height: 42px;
-      background: #7c3aed;
+      background: #16a34a;
       border: none;
       border-radius: 8px;
       color: #fff;
@@ -262,7 +256,7 @@
       transition: background 0.15s;
     }
 
-    .btn-send:hover { background: #6d28d9; }
+    .btn-send:hover { background: #15803d; }
     .btn-send:disabled { background: #2e2e2e; cursor: not-allowed; }
   </style>
 </head>
@@ -271,17 +265,14 @@
 <!-- Setup screen -->
 <div id="setup">
   <div class="setup-card">
-    <h1>Claude Chat</h1>
+    <h1>Gemini Chat</h1>
     <p>
-      Enter your <a href="https://console.anthropic.com/settings/keys" target="_blank">Anthropic API key</a>
-      and your Cloudflare Worker URL. Both are saved locally in your browser.
+      Enter your <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio API key</a>.
+      It's free and saved only in your browser.
     </p>
 
-    <label for="workerUrl">Cloudflare Worker URL</label>
-    <input type="text" id="workerUrl" placeholder="https://my-worker.yourname.workers.dev" />
-
-    <label for="apiKey">Anthropic API Key</label>
-    <input type="password" id="apiKey" placeholder="sk-ant-..." />
+    <label for="apiKey">Gemini API Key</label>
+    <input type="password" id="apiKey" placeholder="AIza..." />
 
     <button class="btn-primary" onclick="saveSettings()">Save and start chatting</button>
     <p class="error-msg" id="setupError"></p>
@@ -291,7 +282,7 @@
 <!-- Chat screen -->
 <div id="chat">
   <div class="chat-header">
-    <span>Claude Chat</span>
+    <span>Gemini Chat</span>
     <button class="btn-reset" onclick="resetSettings()">Change API key</button>
   </div>
   <div class="messages" id="messages"></div>
@@ -303,60 +294,45 @@
 </div>
 
 <script>
-  const STORAGE_KEY_KEY = "claude_api_key";
-  const STORAGE_WORKER_KEY = "claude_worker_url";
+  const STORAGE_KEY = "gemini_api_key";
+  const MODEL = "gemini-2.0-flash";
 
   let history = [];
-  let workerUrl = "";
   let apiKey = "";
 
   function init() {
-    const savedKey = localStorage.getItem(STORAGE_KEY_KEY);
-    const savedWorker = localStorage.getItem(STORAGE_WORKER_KEY);
-    if (savedKey && savedWorker) {
-      apiKey = savedKey;
-      workerUrl = savedWorker;
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      apiKey = saved;
       showChat();
     } else {
-      // Pre-fill if partial
-      if (savedWorker) document.getElementById("workerUrl").value = savedWorker;
-      if (savedKey) document.getElementById("apiKey").value = savedKey;
+      document.getElementById("setup").style.display = "flex";
     }
   }
 
   function saveSettings() {
     const key = document.getElementById("apiKey").value.trim();
-    const url = document.getElementById("workerUrl").value.trim();
     const err = document.getElementById("setupError");
 
-    if (!key.startsWith("sk-ant-")) {
-      err.textContent = "API key should start with sk-ant-";
-      err.style.display = "block";
-      return;
-    }
-    if (!url.startsWith("https://")) {
-      err.textContent = "Worker URL should start with https://";
+    if (!key.startsWith("AIza")) {
+      err.textContent = "Key should start with AIza";
       err.style.display = "block";
       return;
     }
 
-    localStorage.setItem(STORAGE_KEY_KEY, key);
-    localStorage.setItem(STORAGE_WORKER_KEY, url);
+    localStorage.setItem(STORAGE_KEY, key);
     apiKey = key;
-    workerUrl = url;
     err.style.display = "none";
     showChat();
   }
 
   function resetSettings() {
-    localStorage.removeItem(STORAGE_KEY_KEY);
-    localStorage.removeItem(STORAGE_WORKER_KEY);
+    localStorage.removeItem(STORAGE_KEY);
     history = [];
     document.getElementById("messages").innerHTML = "";
     document.getElementById("chat").style.display = "none";
     document.getElementById("setup").style.display = "flex";
     document.getElementById("apiKey").value = "";
-    document.getElementById("workerUrl").value = "";
   }
 
   function showChat() {
@@ -372,7 +348,7 @@
 
     const avatar = document.createElement("div");
     avatar.className = "avatar";
-    avatar.textContent = role === "user" ? "U" : "C";
+    avatar.textContent = role === "user" ? "U" : "G";
 
     const bubble = document.createElement("div");
     bubble.className = "bubble";
@@ -400,32 +376,30 @@
     document.getElementById("sendBtn").disabled = true;
 
     appendMessage("user", text);
-    history.push({ role: "user", content: text });
+
+    // Build Gemini conversation history
+    history.push({ role: "user", parts: [{ text }] });
 
     const thinkingBubble = appendMessage("assistant", "", true);
 
     try {
-      const res = await fetch(workerUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-API-Key": apiKey,
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1024,
-          messages: history,
-        }),
-      });
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: history }),
+        }
+      );
 
       const data = await res.json();
 
       if (data.error) {
-        thinkingBubble.textContent = "Error: " + (data.error.message || JSON.stringify(data.error));
+        thinkingBubble.textContent = "Error: " + data.error.message;
       } else {
-        const reply = data.content?.[0]?.text || "(no response)";
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "(no response)";
         thinkingBubble.textContent = reply;
-        history.push({ role: "assistant", content: reply });
+        history.push({ role: "model", parts: [{ text: reply }] });
       }
     } catch (e) {
       thinkingBubble.textContent = "Network error: " + e.message;
