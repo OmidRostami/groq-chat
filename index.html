@@ -517,7 +517,7 @@
     .bubble li { margin: 0.2rem 0; }
     .bubble strong { color: #f0f0f0; font-weight: 600; }
     .bubble em { color: #bbb; }
-    .bubble a { color: #f97316; text-decoration: none; }
+    .bubble a { color: #f97316; text-decoration: underline; text-underline-offset: 3px; }
     .bubble blockquote { border-left: 3px solid #f97316; padding-left: 0.85rem; color: #888; margin: 0.65rem 0; }
     .bubble hr { border: none; border-top: 1px solid #222; margin: 0.85rem 0; }
 
@@ -847,6 +847,14 @@
 
   marked.setOptions({ breaks: true, gfm: true });
 
+  // Override link renderer to open in new tab
+  const renderer = new marked.Renderer();
+  renderer.link = function(href, title, text) {
+    const t = title ? ` title="${title}"` : '';
+    return `<a href="${href}"${t} target="_blank" rel="noopener noreferrer">${text}</a>`;
+  };
+  marked.setOptions({ renderer });
+
   /* ── Init ── */
   function init() {
     apiKey   = localStorage.getItem(KEY_STORE) || "";
@@ -966,7 +974,7 @@
     activeChatId = id;
     renderSidebar();
     loadChat(id);
-    document.getElementById("userInput").focus();
+    if (window.innerWidth > 640) document.getElementById("userInput").focus();
   }
 
   function loadChat(id) {
@@ -978,7 +986,7 @@
     chat.messages.forEach(m => renderMessage(m.role, m.content));
     msgs.scrollTop = msgs.scrollHeight;
     renderSidebar();
-    document.getElementById("userInput").focus();
+    if (window.innerWidth > 640) document.getElementById("userInput").focus();
   }
 
   function togglePin(id) {
@@ -1292,7 +1300,7 @@
 
     document.getElementById("messages").scrollTop = 99999;
     document.getElementById("sendBtn").disabled = false;
-    document.getElementById("userInput").focus();
+    if (window.innerWidth > 640) document.getElementById("userInput").focus();
   }
 
   function handleKey(e) {
