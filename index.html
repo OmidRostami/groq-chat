@@ -64,7 +64,8 @@
     body.light .theme-opt { background: #f0f0f0 !important; border-color: var(--border) !important; }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; overflow: hidden; }
+    html { height: 100%; }
+    body { min-height: 100%; }
 
     body {
       font-family: system-ui, -apple-system, sans-serif;
@@ -72,7 +73,6 @@
       color: #e8e8e8;
       display: flex;
       height: 100vh;
-      height: 100dvh;
     }
 
     /* ════════════════════════════════════════
@@ -82,15 +82,13 @@
     body.layout-h {
       flex-direction: row;
       height: 100vh;
-      height: 100dvh;
       overflow: hidden;
     }
 
     body.layout-h #sidebar {
       width: 248px;
       min-width: 248px;
-      height: 100vh;
-      height: 100dvh;
+      height: 100%;
       flex-shrink: 0;
       background: #111;
       border-right: 1px solid #1e1e1e;
@@ -124,7 +122,7 @@
        ════════════════════════════════════════ */
     body.layout-v {
       flex-direction: column;
-      height: 100dvh;
+      height: 100vh;
       overflow: hidden;
     }
 
@@ -534,6 +532,7 @@
       overflow: hidden;
       min-width: 0;
       min-height: 0;
+      height: 100%;
     }
 
     .top-bar {
