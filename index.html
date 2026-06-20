@@ -924,7 +924,7 @@
 <body>
 
 <script>
-  // Pre-paint: set layout + sidebar state before first render to avoid flash
+  // Pre-paint: set layout + sidebar + accent color before first render — no flash
   (function() {
     var isH = window.innerWidth > window.innerHeight && window.innerWidth > 640;
     document.body.classList.add(isH ? "layout-h" : "layout-v");
@@ -934,9 +934,25 @@
     if (sidebar) {
       sidebar.classList.add("no-transition");
       if (isH && !open) sidebar.classList.add("sidebar-closed");
-      // vertical: default is closed (height:0), only add sidebar-open if open
       if (!isH && open) sidebar.classList.add("sidebar-open");
     }
+    // Apply saved accent color immediately so no orange flash
+    var COLORS = {
+      orange: { accent:'#f97316', dark:'#ea6c0a', dim:'#7c3a0a', bg:'#231206', border:'#9a3412', text:'#fed7aa' },
+      green:  { accent:'#22c55e', dark:'#16a34a', dim:'#14532d', bg:'#0d2a12', border:'#166534', text:'#bbf7d0' },
+      blue:   { accent:'#3b82f6', dark:'#2563eb', dim:'#1e3a8a', bg:'#0d1a35', border:'#1e40af', text:'#bfdbfe' },
+      purple: { accent:'#a855f7', dark:'#9333ea', dim:'#581c87', bg:'#1e0a35', border:'#6b21a8', text:'#e9d5ff' },
+      gray:   { accent:'#6b7280', dark:'#4b5563', dim:'#374151', bg:'#18191b', border:'#4b5563', text:'#e5e7eb' },
+    };
+    var name = localStorage.getItem("accent_color") || "orange";
+    var c = COLORS[name] || COLORS.orange;
+    var r = document.documentElement.style;
+    r.setProperty("--accent",        c.accent);
+    r.setProperty("--accent-dark",   c.dark);
+    r.setProperty("--accent-dim",    c.dim);
+    r.setProperty("--accent-bg",     c.bg);
+    r.setProperty("--accent-border", c.border);
+    r.setProperty("--accent-text",   c.text);
   })();
 
   // Set --vh = real viewport height. Most reliable fix for iOS Safari address bar issues.
