@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI Chat</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -115,10 +116,7 @@
       color: #d4d4d4;
     }
 
-    .header-buttons {
-      display: flex;
-      gap: 0.5rem;
-    }
+    .header-buttons { display: flex; gap: 0.5rem; }
 
     .btn-small {
       font-size: 0.78rem;
@@ -160,7 +158,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-weight: 600;
     }
 
@@ -173,7 +171,6 @@
       font-size: 0.92rem;
       line-height: 1.65;
       max-width: calc(100% - 44px);
-      white-space: pre-wrap;
       word-break: break-word;
     }
 
@@ -182,6 +179,7 @@
       border: 1px solid #7c2d12;
       color: #fed7aa;
       border-radius: 12px 4px 12px 12px;
+      white-space: pre-wrap;
     }
 
     .msg.assistant .bubble {
@@ -189,6 +187,75 @@
       border: 1px solid #2e2e2e;
       color: #e0e0e0;
       border-radius: 4px 12px 12px 12px;
+    }
+
+    /* Markdown styles inside assistant bubble */
+    .bubble p { margin: 0 0 0.75rem; }
+    .bubble p:last-child { margin-bottom: 0; }
+    .bubble h1, .bubble h2, .bubble h3 { margin: 1rem 0 0.5rem; color: #f0f0f0; font-weight: 600; }
+    .bubble h1 { font-size: 1.2rem; }
+    .bubble h2 { font-size: 1.05rem; }
+    .bubble h3 { font-size: 0.95rem; }
+    .bubble ul, .bubble ol { padding-left: 1.4rem; margin: 0.5rem 0; }
+    .bubble li { margin: 0.25rem 0; }
+    .bubble strong { color: #f0f0f0; font-weight: 600; }
+    .bubble em { color: #ccc; font-style: italic; }
+    .bubble a { color: #f97316; text-decoration: none; }
+
+    .bubble code {
+      background: #111;
+      color: #fb923c;
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      font-family: 'Fira Code', 'Courier New', monospace;
+      font-size: 0.85em;
+    }
+
+    .bubble pre {
+      background: #111;
+      border: 1px solid #2e2e2e;
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-x: auto;
+      margin: 0.75rem 0;
+      position: relative;
+    }
+
+    .bubble pre code {
+      background: none;
+      color: #e2e8f0;
+      padding: 0;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: #2e2e2e;
+      border: none;
+      color: #aaa;
+      font-size: 0.72rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .copy-btn:hover { background: #3e3e3e; color: #fff; }
+
+    .bubble blockquote {
+      border-left: 3px solid #f97316;
+      padding-left: 1rem;
+      color: #aaa;
+      margin: 0.75rem 0;
+    }
+
+    .bubble hr {
+      border: none;
+      border-top: 1px solid #2e2e2e;
+      margin: 1rem 0;
     }
 
     .thinking {
@@ -300,12 +367,11 @@
   let history = [];
   let apiKey = "";
 
+  marked.setOptions({ breaks: true, gfm: true });
+
   function init() {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      apiKey = saved;
-      showChat();
-    }
+    if (saved) { apiKey = saved; showChat(); }
   }
 
   function saveSettings() {
@@ -343,6 +409,21 @@
     document.getElementById("userInput").focus();
   }
 
+  function addCopyButtons(el) {
+    el.querySelectorAll("pre").forEach(pre => {
+      const btn = document.createElement("button");
+      btn.className = "copy-btn";
+      btn.textContent = "Copy";
+      btn.onclick = () => {
+        navigator.clipboard.writeText(pre.querySelector("code")?.innerText || pre.innerText);
+        btn.textContent = "Copied!";
+        setTimeout(() => btn.textContent = "Copy", 1500);
+      };
+      pre.style.position = "relative";
+      pre.appendChild(btn);
+    });
+  }
+
   function appendMessage(role, text, isThinking = false) {
     const msgs = document.getElementById("messages");
     const msg = document.createElement("div");
@@ -357,6 +438,9 @@
 
     if (isThinking) {
       bubble.innerHTML = `<div class="thinking"><span></span><span></span><span></span></div>`;
+    } else if (role === "assistant") {
+      bubble.innerHTML = marked.parse(text);
+      addCopyButtons(bubble);
     } else {
       bubble.textContent = text;
     }
@@ -389,10 +473,7 @@
           "Content-Type": "application/json",
           "Authorization": `Bearer ${apiKey}`,
         },
-        body: JSON.stringify({
-          model: MODEL,
-          messages: history,
-        }),
+        body: JSON.stringify({ model: MODEL, messages: history }),
       });
 
       const data = await res.json();
@@ -401,13 +482,15 @@
         thinkingBubble.textContent = "Error: " + data.error.message;
       } else {
         const reply = data.choices?.[0]?.message?.content || "(no response)";
-        thinkingBubble.textContent = reply;
+        thinkingBubble.innerHTML = marked.parse(reply);
+        addCopyButtons(thinkingBubble);
         history.push({ role: "assistant", content: reply });
       }
     } catch (e) {
       thinkingBubble.textContent = "Network error: " + e.message;
     }
 
+    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
     document.getElementById("sendBtn").disabled = false;
     document.getElementById("userInput").focus();
   }
