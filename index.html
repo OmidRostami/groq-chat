@@ -31,12 +31,12 @@
     body.light .messages { background: var(--bg) !important; }
     body.light .input-bar { background: transparent !important; border-top: none !important; }
     body.light .msg.assistant .bubble { background: var(--bg2) !important; border-color: var(--border) !important; color: var(--text) !important; }
-    body.light .chat-item:hover { background: rgba(0,0,0,0.05) !important; }
+    body.light .chat-item:hover { background: color-mix(in srgb, var(--accent) 8%, white) !important; }
     body.light .chat-item.active { background: color-mix(in srgb, var(--accent) 12%, transparent) !important; }
     body.light .input-row { background: #ffffff !important; border-color: #ddd !important; box-shadow: 0 4px 24px rgba(0,0,0,0.12) !important; }
     body.light textarea { color: var(--text) !important; }
     body.light .popup-menu { background: var(--bg2) !important; border-color: var(--border) !important; }
-    body.light .popup-item { color: var(--text2) !important; }
+    body.light .popup-item { color: #333 !important; }
     body.light .popup-header { color: var(--text3) !important; }
     body.light .sidebar-bottom { border-color: var(--border) !important; }
     body.light .user-name { color: var(--text2) !important; }
@@ -294,7 +294,8 @@
       align-items: center;
       justify-content: center;
     }
-    .icon-btn:hover { color: #ddd; background: #2a2a2a; }
+    .icon-btn:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+    body.light .icon-btn:hover { background: color-mix(in srgb, var(--accent) 10%, white); }
     .icon-btn.del:hover { color: #f87171; background: #1f0e0e; }
     .icon-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
     .icon-btn.del svg { width: 13px; height: 13px; }
@@ -356,7 +357,8 @@
       padding: 0;
     }
     .bottom-icon-btn svg { width: 16px; height: 16px; }
-    .bottom-icon-btn:hover { color: var(--accent); background: transparent; }
+    .bottom-icon-btn:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+    body.light .bottom-icon-btn:hover { background: color-mix(in srgb, var(--accent) 10%, white); }
 
     /* ── Popup menus ── */
     .popup-menu {
@@ -411,9 +413,11 @@
       width: 100%;
     }
     .popup-item svg { width: 14px; height: 14px; flex-shrink: 0; }
-    .popup-item:hover { background: rgba(255,255,255,0.06); color: var(--accent); }
+    .popup-item:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+    body.light .popup-item:hover { background: color-mix(in srgb, var(--accent) 12%, white); color: var(--accent); }
     .popup-item.danger { color: #888; }
-    .popup-item.danger:hover { background: #1f0e0e; color: #f87171; }
+    .popup-item.danger:hover { background: rgba(248,113,113,0.12); color: #f87171; }
+    body.light .popup-item.danger:hover { background: rgba(220,38,38,0.1); color: #dc2626; }
 
     /* Theme options */
     .theme-options {
@@ -492,7 +496,8 @@
       justify-content: center;
       flex-shrink: 0;
     }
-    .btn-toggle:hover { color: var(--accent); background: transparent; }
+    .btn-toggle:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+    body.light .btn-toggle:hover { background: color-mix(in srgb, var(--accent) 10%, white); }
     .btn-toggle svg { width: 18px; height: 18px; }
 
     #chat-title {
