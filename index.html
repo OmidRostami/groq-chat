@@ -1074,8 +1074,13 @@
     try {
       const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
-        headers: { "Content-Type":"application/json", "Authorization":`Bearer ${apiKey}` },
-        body: JSON.stringify({ model:MODEL, messages:chat.messages }),
+        mode: "cors",
+        cache: "no-cache",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({ model: MODEL, messages: chat.messages }),
       });
       const data = await res.json();
       thinkingEl.remove();
