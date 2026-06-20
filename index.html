@@ -167,37 +167,29 @@
     .key-row {
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      justify-content: space-between;
       margin-bottom: 0.5rem;
-      background: #0d0d0d;
-      border: 1px solid #1e1e1e;
-      border-radius: 6px;
-      padding: 0.28rem 0.5rem;
     }
 
-    .key-preview {
-      flex: 1;
+    .key-label {
       font-size: 0.72rem;
-      color: #555;
-      font-family: 'Fira Code', monospace;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      min-width: 0;
+      color: #444;
     }
 
     .key-copy-btn {
       background: none;
-      border: none;
-      color: #444;
+      border: 1px solid #222;
+      color: #555;
       cursor: pointer;
-      padding: 0.1rem;
+      padding: 0.18rem 0.5rem;
       display: flex;
       align-items: center;
+      gap: 0.3rem;
       flex-shrink: 0;
-      border-radius: 3px;
+      border-radius: 5px;
+      font-size: 0.7rem;
     }
-    .key-copy-btn:hover { color: #f97316; }
+    .key-copy-btn:hover { color: #f97316; border-color: #7c3a0a; }
     .key-copy-btn svg { width: 11px; height: 11px; }
 
     .btn-signout {
@@ -470,20 +462,27 @@
       border-top: 1px solid #1a1a1a;
       background: #111;
       display: flex;
-      gap: 0.55rem;
       align-items: flex-end;
-      justify-content: center;
     }
 
     .input-wrap {
       flex: 1;
+      min-width: 0;
       display: flex;
       justify-content: center;
     }
 
-    textarea {
+    .input-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.55rem;
       width: 100%;
-      max-width: 780px;
+      max-width: 748px;
+    }
+
+    textarea {
+      flex: 1;
+      min-width: 0;
       background: #161616;
       border: 1px solid #242424;
       border-radius: 10px;
@@ -497,6 +496,7 @@
       outline: none;
       transition: border-color 0.15s;
       font-family: inherit;
+      overflow-y: auto;
     }
     textarea:focus { border-color: #f97316; }
 
@@ -620,9 +620,10 @@
       <div class="user-name" id="userNameSidebar">—</div>
     </div>
     <div class="key-row">
-      <span class="key-preview" id="keyPreview">—</span>
+      <span class="key-label">API Key</span>
       <button class="key-copy-btn" id="keyCopyBtn" title="Copy API key">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
       </button>
     </div>
     <button class="btn-signout" onclick="signOut()">
@@ -642,7 +643,7 @@
       <p>Enter your name and <a href="https://console.groq.com/keys" target="_blank">Groq API key</a> to get started.</p>
       <div class="field-group">
         <label for="inputName">Your name</label>
-        <input type="text" id="inputName" placeholder="Omid" autocomplete="off" />
+        <input type="text" id="inputName" placeholder="Your name" autocomplete="off" />
       </div>
       <div class="field-group">
         <label for="apiKey">Groq API Key</label>
@@ -673,14 +674,16 @@
     <div class="messages" id="messages"></div>
     <div class="input-bar">
       <div class="input-wrap">
-        <textarea id="userInput" placeholder="Type a message… (↵ new line, Ctrl+Enter to send)" rows="3"
-          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <div class="input-row">
+          <textarea id="userInput" placeholder="Type a message… (↵ new line, Ctrl+Enter to send)" rows="3"
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="btn-send" id="sendBtn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
       </div>
-      <button class="btn-send" id="sendBtn" onclick="sendMessage()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-        </svg>
-      </button>
     </div>
   </div>
 
@@ -744,9 +747,7 @@
     const initials = userName.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
     document.getElementById("userAvatarSidebar").textContent = initials;
     document.getElementById("userNameSidebar").textContent = userName;
-    // Show masked API key
-    const masked = apiKey.slice(0,4) + "..." + apiKey.slice(-4);
-    document.getElementById("keyPreview").textContent = masked;
+    // Copy API key button
     document.getElementById("keyCopyBtn").onclick = () => {
       navigator.clipboard.writeText(apiKey);
       const btn = document.getElementById("keyCopyBtn");
@@ -1084,7 +1085,11 @@
   }
 
   function handleKey(e) {
-    if (e.key==="Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendMessage(); }
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      sendMessage();
+    }
+    // All other keys (arrows, shift+enter, etc.) pass through naturally
   }
 
   function autoResize(el) {
