@@ -49,14 +49,14 @@
 
     body.layout-h .sidebar-bottom { display: flex; flex-direction: column; }
 
-    /* Horizontal toggle icon: panel left arrows */
-    .icon-h-open, .icon-h-closed,
-    .icon-v-open, .icon-v-closed { display: none; }
+    /* All icons hidden by default */
+    .icon-h-open, .icon-h-closed, .icon-v-open, .icon-v-closed { display: none; }
 
-    body.layout-h .icon-h-open   { display: block; }  /* shown when sidebar open  */
-    body.layout-h .icon-h-closed { display: none;  }
-    body.layout-h #sidebar.sidebar-closed ~ #main .icon-h-open   { display: none;  }
-    body.layout-h #sidebar.sidebar-closed ~ #main .icon-h-closed { display: block; }
+    /* Horizontal layout icons — driven by body.sidebar-is-open */
+    body.layout-h.sidebar-is-open  .icon-h-open   { display: block; }
+    body.layout-h.sidebar-is-open  .icon-h-closed { display: none;  }
+    body.layout-h:not(.sidebar-is-open) .icon-h-open   { display: none;  }
+    body.layout-h:not(.sidebar-is-open) .icon-h-closed { display: block; }
 
     /* ════════════════════════════════════════
        VERTICAL sidebar (mobile / portrait)
@@ -89,11 +89,9 @@
       overflow-y: auto;
     }
 
-    /* Vertical toggle icon: rotated panel arrows (top/bottom) */
-    body.layout-v .icon-v-open   { display: block; }  /* shown when sidebar open  */
-    body.layout-v .icon-v-closed { display: none;  }
-    body.layout-v.sidebar-is-open .icon-v-open   { display: block; }
-    body.layout-v.sidebar-is-open .icon-v-closed { display: none;  }
+    /* Vertical layout icons — driven by body.sidebar-is-open */
+    body.layout-v.sidebar-is-open  .icon-v-open   { display: block; }
+    body.layout-v.sidebar-is-open  .icon-v-closed { display: none;  }
     body.layout-v:not(.sidebar-is-open) .icon-v-open   { display: none;  }
     body.layout-v:not(.sidebar-is-open) .icon-v-closed { display: block; }
 
@@ -115,7 +113,6 @@
 
     /* Shared no-animation helper */
     #sidebar.no-transition { transition: none !important; }
-    body.sidebar-closed-init #sidebar { width: 0 !important; min-width: 0 !important; border-right: none !important; transition: none !important; }
 
     /* ── Main area shared ── */
     #main {
@@ -709,14 +706,18 @@
 <body>
 
 <script>
-  // Pre-paint: set layout class and sidebar state before first render
+  // Pre-paint: set layout + sidebar state before first render to avoid flash
   (function() {
     var isH = window.innerWidth > window.innerHeight && window.innerWidth > 640;
     document.body.classList.add(isH ? "layout-h" : "layout-v");
     var open = localStorage.getItem("sidebar_open") !== "0";
     document.body.classList.toggle("sidebar-is-open", open);
-    if (isH && !open) {
-      document.body.classList.add("sidebar-closed-init");
+    var sidebar = document.getElementById("sidebar");
+    if (sidebar) {
+      sidebar.classList.add("no-transition");
+      if (isH && !open) sidebar.classList.add("sidebar-closed");
+      // vertical: default is closed (height:0), only add sidebar-open if open
+      if (!isH && open) sidebar.classList.add("sidebar-open");
     }
   })();
 </script>
@@ -887,16 +888,14 @@
 
     const layout = getLayout();
 
+    // Clean up both classes first
+    sidebar.classList.remove("sidebar-open", "sidebar-closed");
+    document.body.classList.toggle("sidebar-is-open", sidebarOpen);
+
     if (layout === "horizontal") {
-      // Horizontal: toggle sidebar-closed on sidebar element
-      sidebar.classList.remove("sidebar-open");
-      sidebar.classList.toggle("sidebar-closed", !sidebarOpen);
-      document.body.classList.toggle("sidebar-is-open", sidebarOpen);
+      if (!sidebarOpen) sidebar.classList.add("sidebar-closed");
     } else {
-      // Vertical: toggle sidebar-open on sidebar element (default is closed/height-0)
-      sidebar.classList.remove("sidebar-closed");
-      sidebar.classList.toggle("sidebar-open", sidebarOpen);
-      document.body.classList.toggle("sidebar-is-open", sidebarOpen);
+      if (sidebarOpen) sidebar.classList.add("sidebar-open");
     }
 
     if (!animate) {
@@ -1315,6 +1314,22 @@
     el.style.height = "auto";
     el.style.height = Math.min(el.scrollHeight,160)+"px";
   }
+
+  // Dismiss keyboard when tapping outside textarea (important for iOS)
+  document.addEventListener("touchstart", function(e) {
+    const ta = document.getElementById("userInput");
+    if (ta && !ta.contains(e.target) && document.activeElement === ta) {
+      ta.blur();
+    }
+  }, { passive: true });
+
+  // Also dismiss on click outside (desktop)
+  document.addEventListener("mousedown", function(e) {
+    const ta = document.getElementById("userInput");
+    if (ta && !ta.contains(e.target) && document.activeElement === ta) {
+      ta.blur();
+    }
+  });
 
   init();
 </script>
