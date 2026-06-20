@@ -36,7 +36,6 @@
     body.light .input-row { background: #ffffff !important; border-color: #ddd !important; box-shadow: 0 4px 24px rgba(0,0,0,0.12) !important; }
     body.light textarea { color: var(--text) !important; }
     body.light .popup-menu { background: var(--bg2) !important; border-color: var(--border) !important; }
-    body.light .popup-item { color: #333 !important; }
     body.light .popup-header { color: var(--text3) !important; }
     body.light .sidebar-bottom { border-color: var(--border) !important; }
     body.light .user-name { color: var(--text2) !important; }
@@ -404,20 +403,43 @@
       gap: 0.55rem;
       padding: 0.5rem 0.6rem;
       border-radius: 7px;
-      border: none;
+      border: 1px solid transparent;
       background: none;
       color: #ccc;
       font-size: 0.83rem;
       cursor: pointer;
       text-align: left;
       width: 100%;
+      transition: all 0.15s;
     }
     .popup-item svg { width: 14px; height: 14px; flex-shrink: 0; }
-    .popup-item:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
-    body.light .popup-item:hover { background: color-mix(in srgb, var(--accent) 12%, white); color: var(--accent); }
-    .popup-item.danger { color: #888; }
-    .popup-item.danger:hover { background: rgba(248,113,113,0.12); color: #f87171; }
-    body.light .popup-item.danger:hover { background: rgba(220,38,38,0.1); color: #dc2626; }
+    /* Dark hover: accent border + tint bg + full accent text */
+    .popup-item:hover {
+      border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      color: var(--accent);
+    }
+    /* Light base */
+    body.light .popup-item { color: #333 !important; }
+    /* Light hover: same logic */
+    body.light .popup-item:hover {
+      border-color: color-mix(in srgb, var(--accent) 40%, white) !important;
+      background: color-mix(in srgb, var(--accent) 10%, white) !important;
+      color: var(--accent) !important;
+    }
+    /* Sign out danger */
+    .popup-item.danger { color: #666; }
+    .popup-item.danger:hover {
+      border-color: rgba(248,113,113,0.4);
+      background: rgba(248,113,113,0.10);
+      color: #f87171;
+    }
+    body.light .popup-item.danger { color: #888 !important; }
+    body.light .popup-item.danger:hover {
+      border-color: rgba(220,38,38,0.3) !important;
+      background: rgba(220,38,38,0.08) !important;
+      color: #dc2626 !important;
+    }
 
     /* Theme options */
     .theme-options {
@@ -436,14 +458,40 @@
       border-radius: 8px;
       border: 1px solid #2a2a2a;
       background: #111;
-      color: #888;
+      color: #666;
       font-size: 0.68rem;
       cursor: pointer;
       transition: all 0.15s;
     }
     .theme-opt svg { width: 14px; height: 14px; }
-    .theme-opt:hover { border-color: var(--accent); color: #ccc; }
-    .theme-opt.active { border-color: var(--accent); color: var(--accent); background: #1a1a1a; }
+    /* Dark mode hover: accent border + accent text tint + bg tint */
+    .theme-opt:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+    }
+    .theme-opt.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 15%, transparent);
+    }
+    /* Light mode base */
+    body.light .theme-opt {
+      background: #f5f5f5 !important;
+      border-color: #ddd !important;
+      color: #777 !important;
+    }
+    /* Light mode hover: same logic — accent border + accent text + tint bg */
+    body.light .theme-opt:hover {
+      border-color: var(--accent) !important;
+      color: var(--accent) !important;
+      background: color-mix(in srgb, var(--accent) 10%, white) !important;
+    }
+    body.light .theme-opt.active {
+      border-color: var(--accent) !important;
+      color: var(--accent) !important;
+      background: color-mix(in srgb, var(--accent) 14%, white) !important;
+    }
 
     /* Color swatches */
     .color-options {
@@ -463,6 +511,7 @@
     }
     .color-swatch:hover { transform: scale(1.15); }
     .color-swatch.active { border-color: #fff; transform: scale(1.1); }
+    body.light .color-swatch.active { border-color: #333; }
 
     /* ── Main ── */
     #main {
