@@ -64,15 +64,14 @@
     body.light .theme-opt { background: #f0f0f0 !important; border-color: var(--border) !important; }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { height: 100%; }
-    body { min-height: 100%; }
+    html, body { height: 100%; }
 
     body {
       font-family: system-ui, -apple-system, sans-serif;
       background: #0f0f0f;
       color: #e8e8e8;
       display: flex;
-      height: 100vh;
+      height: var(--vh, 100vh);
     }
 
     /* ════════════════════════════════════════
@@ -81,19 +80,15 @@
        ════════════════════════════════════════ */
     body.layout-h {
       flex-direction: row;
-      height: 100vh;
+      height: var(--vh, 100vh);
       overflow: hidden;
     }
-    @media (pointer: coarse) {
-      body.layout-h { height: 100dvh; }
-      body.layout-v { height: 100dvh; }
-      body { height: 100dvh; }
-    }
+
 
     body.layout-h #sidebar {
       width: 248px;
       min-width: 248px;
-      height: 100%;
+      height: var(--vh, 100vh);
       flex-shrink: 0;
       background: #111;
       border-right: 1px solid #1e1e1e;
@@ -127,7 +122,7 @@
        ════════════════════════════════════════ */
     body.layout-v {
       flex-direction: column;
-      height: 100vh;
+      height: var(--vh, 100vh);
       overflow: hidden;
     }
 
@@ -148,7 +143,7 @@
 
     body.layout-v #sidebar.sidebar-open {
       height: auto;
-      max-height: 52dvh;
+      max-height: calc(var(--vh, 100vh) * 0.52);
       overflow-y: auto;
     }
 
@@ -943,6 +938,14 @@
       if (!isH && open) sidebar.classList.add("sidebar-open");
     }
   })();
+
+  // Set --vh = real viewport height. Most reliable fix for iOS Safari address bar issues.
+  function setVH() {
+    document.documentElement.style.setProperty('--vh', window.innerHeight + 'px');
+  }
+  setVH();
+  window.addEventListener('resize', setVH);
+  window.addEventListener('orientationchange', function() { setTimeout(setVH, 150); });
 </script>
 
 <!-- Delete modal -->
