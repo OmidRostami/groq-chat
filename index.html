@@ -703,15 +703,22 @@
 
     .msg-action-btn {
       font-size: 0.68rem;
-      color: #444;
+      color: #555;
       background: none;
       border: 1px solid #222;
       border-radius: 4px;
-      padding: 0.16rem 0.42rem;
+      padding: 0.18rem 0.45rem;
       cursor: pointer;
-      transition: color 0.15s, border-color 0.15s;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
     }
+    .msg-action-btn svg { width: 11px; height: 11px; flex-shrink: 0; }
     .msg-action-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .msg-action-del { color: #555; }
+    .msg-action-del:hover { color: #f87171 !important; border-color: #f87171 !important; background: rgba(248,113,113,0.08) !important; }
+    body.light .msg-action-del:hover { background: rgba(220,38,38,0.07) !important; color: #dc2626 !important; border-color: #dc2626 !important; }
 
     /* Markdown */
     .bubble p { margin: 0 0 0.65rem; }
@@ -1454,10 +1461,11 @@
       .trim();
   }
 
-  function renderMessage(role, content) {
+  function renderMessage(role, content, msgIndex) {
     const msgs = document.getElementById("messages");
     const msg = document.createElement("div");
     msg.className = `msg ${role}`;
+    if (msgIndex !== undefined) msg.dataset.index = msgIndex;
 
     const avatar = document.createElement("div");
     avatar.className = "avatar";
@@ -1484,23 +1492,50 @@
     const actions = document.createElement("div");
     actions.className = "msg-actions";
 
+    // Copy button
     const copyBtn = document.createElement("button");
     copyBtn.className = "msg-action-btn";
-    copyBtn.textContent = "Copy";
+    copyBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
     copyBtn.onclick = () => {
       const plain = role==="assistant" ? toPlainText(content) : content;
       navigator.clipboard.writeText(plain);
-      copyBtn.textContent = "Copied!";
-      setTimeout(()=>copyBtn.textContent="Copy", 1500);
+      copyBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+      setTimeout(() => {
+        copyBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
+      }, 1500);
     };
 
+    // Delete button
+    const delBtn = document.createElement("button");
+    delBtn.className = "msg-action-btn msg-action-del";
+    delBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg> Delete`;
+    delBtn.onclick = () => deleteMessage(msg);
+
     actions.appendChild(copyBtn);
+    actions.appendChild(delBtn);
     body.appendChild(bubble);
     body.appendChild(actions);
     msg.appendChild(avatar);
     msg.appendChild(body);
     msgs.appendChild(msg);
     return bubble;
+  }
+
+  function deleteMessage(msgEl) {
+    if (!activeChatId) return;
+    const chat = chats[activeChatId];
+    // Find which message index this DOM element is
+    const allMsgs = Array.from(document.getElementById("messages").children);
+    const domIndex = allMsgs.indexOf(msgEl);
+    if (domIndex === -1) return;
+    // Remove from chat.messages array
+    chat.messages.splice(domIndex, 1);
+    saveChats();
+    // Remove from DOM with fade
+    msgEl.style.transition = "opacity 0.2s, transform 0.2s";
+    msgEl.style.opacity = "0";
+    msgEl.style.transform = "scale(0.97)";
+    setTimeout(() => msgEl.remove(), 200);
   }
 
   function appendThinking() {
