@@ -10,9 +10,20 @@
       --accent: #f97316;
       --accent-dark: #ea6c0a;
       --accent-dim: #7c3a0a;
-      --accent-bg: #1c1008;
-      --accent-border: #7c2d12;
+      --accent-bg: #231206;
+      --accent-border: #9a3412;
       --accent-text: #fed7aa;
+      /* Tint vars precomputed for Safari (no color-mix) */
+      --at-8w:  rgb(254,244,234);
+      --at-10w: rgb(254,240,229);
+      --at-14w: rgb(254,232,218);
+      --at-15w: rgb(253,230,215);
+      --at-30w: rgb(252,205,179);
+      --at-40w: rgb(251,188,155);
+      --at-10t: rgba(249,115,22,0.10);
+      --at-12t: rgba(249,115,22,0.12);
+      --at-15t: rgba(249,115,22,0.15);
+      --at-40t: rgba(249,115,22,0.40);
     }
 
     /* Light mode */
@@ -31,8 +42,8 @@
     body.light .messages { background: var(--bg) !important; }
     body.light .input-bar { background: transparent !important; border-top: none !important; }
     body.light .msg.assistant .bubble { background: var(--bg2) !important; border-color: var(--border) !important; color: var(--text) !important; }
-    body.light .chat-item:hover { background: color-mix(in srgb, var(--accent) 8%, white) !important; }
-    body.light .chat-item.active { background: color-mix(in srgb, var(--accent) 12%, transparent) !important; }
+    body.light .chat-item:hover { background: var(--at-8w) !important; }
+    body.light .chat-item.active { background: var(--at-12t) !important; }
     body.light .input-row { background: #ffffff !important; border-color: #ddd !important; box-shadow: 0 4px 24px rgba(0,0,0,0.12) !important; }
     body.light textarea { color: var(--text) !important; }
     body.light .popup-menu { background: var(--bg2) !important; border-color: var(--border) !important; }
@@ -83,7 +94,7 @@
       border-bottom: none;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      overflow: visible;
       transition: width 0.22s cubic-bezier(.4,0,.2,1), min-width 0.22s cubic-bezier(.4,0,.2,1);
     }
 
@@ -152,7 +163,7 @@
 
     body.layout-v .bottom-row { width: 100%; }
     body.layout-v .user-name { display: block; }
-    body.layout-v .popup-menu { bottom: calc(100% + 6px); }
+
 
     /* Shared no-animation helper */
     #sidebar.no-transition { transition: none !important; }
@@ -293,8 +304,8 @@
       align-items: center;
       justify-content: center;
     }
-    .icon-btn:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
-    body.light .icon-btn:hover { background: color-mix(in srgb, var(--accent) 10%, white); }
+    .icon-btn:hover { color: var(--accent); background: var(--at-10t); }
+    body.light .icon-btn:hover { background: var(--at-10w); }
     .icon-btn.del:hover { color: #f87171; background: #1f0e0e; }
     .icon-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
     .icon-btn.del svg { width: 13px; height: 13px; }
@@ -305,6 +316,7 @@
       padding: 0.55rem 0.65rem;
       flex-shrink: 0;
       position: relative;
+      overflow: visible;
     }
 
     .bottom-row {
@@ -356,15 +368,12 @@
       padding: 0;
     }
     .bottom-icon-btn svg { width: 16px; height: 16px; }
-    .bottom-icon-btn:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
-    body.light .bottom-icon-btn:hover { background: color-mix(in srgb, var(--accent) 10%, white); }
+    .bottom-icon-btn:hover { color: var(--accent); background: var(--at-10t); }
+    body.light .bottom-icon-btn:hover { background: var(--at-10w); }
 
     /* ── Popup menus ── */
     .popup-menu {
-      position: absolute;
-      bottom: calc(100% + 6px);
-      left: 0.5rem;
-      right: 0.5rem;
+      position: fixed;
       background: #1a1a1a;
       border: 1px solid #2a2a2a;
       border-radius: 12px;
@@ -372,9 +381,11 @@
       display: none;
       flex-direction: column;
       box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-      z-index: 50;
+      z-index: 200;
+      width: 220px;
     }
     .popup-menu.open { display: flex; }
+    body.light .popup-menu { background: #fff !important; border-color: #e0e0e0 !important; }
 
     .popup-header {
       font-size: 0.78rem;
@@ -415,16 +426,16 @@
     .popup-item svg { width: 14px; height: 14px; flex-shrink: 0; }
     /* Dark hover: accent border + tint bg + full accent text */
     .popup-item:hover {
-      border-color: color-mix(in srgb, var(--accent) 40%, transparent);
-      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      border-color: var(--at-40t);
+      background: var(--at-12t);
       color: var(--accent);
     }
     /* Light base */
     body.light .popup-item { color: #333 !important; }
     /* Light hover: same logic */
     body.light .popup-item:hover {
-      border-color: color-mix(in srgb, var(--accent) 40%, white) !important;
-      background: color-mix(in srgb, var(--accent) 10%, white) !important;
+      border-color: var(--at-40w) !important;
+      background: var(--at-10w) !important;
       color: var(--accent) !important;
     }
     /* Sign out danger */
@@ -468,12 +479,12 @@
     .theme-opt:hover {
       border-color: var(--accent);
       color: var(--accent);
-      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      background: var(--at-10t);
     }
     .theme-opt.active {
       border-color: var(--accent);
       color: var(--accent);
-      background: color-mix(in srgb, var(--accent) 15%, transparent);
+      background: var(--at-15t);
     }
     /* Light mode base */
     body.light .theme-opt {
@@ -485,12 +496,12 @@
     body.light .theme-opt:hover {
       border-color: var(--accent) !important;
       color: var(--accent) !important;
-      background: color-mix(in srgb, var(--accent) 10%, white) !important;
+      background: var(--at-10w) !important;
     }
     body.light .theme-opt.active {
       border-color: var(--accent) !important;
       color: var(--accent) !important;
-      background: color-mix(in srgb, var(--accent) 14%, white) !important;
+      background: var(--at-14w) !important;
     }
 
     /* Color swatches */
@@ -545,8 +556,8 @@
       justify-content: center;
       flex-shrink: 0;
     }
-    .btn-toggle:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
-    body.light .btn-toggle:hover { background: color-mix(in srgb, var(--accent) 10%, white); }
+    .btn-toggle:hover { color: var(--accent); background: var(--at-10t); }
+    body.light .btn-toggle:hover { background: var(--at-10w); }
     .btn-toggle svg { width: 18px; height: 18px; }
 
     #chat-title {
@@ -655,7 +666,7 @@
     .msg.user .avatar { background: var(--accent); color: #fff; }
     .msg.assistant .avatar { background: #1c1c1c; color: #aaa; border: 1px solid #2a2a2a; }
     body.light .msg.assistant .avatar { background: #e0e0e0 !important; color: #555 !important; border-color: #ccc !important; }
-    body.light .msg.user .bubble { background: color-mix(in srgb, var(--accent) 15%, white) !important; border-color: color-mix(in srgb, var(--accent) 30%, white) !important; color: #1a1a1a !important; }
+    body.light .msg.user .bubble { background: var(--at-15w) !important; border-color: var(--at-30w) !important; color: #1a1a1a !important; }
 
     .msg-body {
       display: flex;
@@ -818,6 +829,8 @@
     }
     textarea::-webkit-scrollbar { display: none; }
     textarea:focus { outline: none; }
+    textarea { -webkit-text-fill-color: inherit; }
+    body.light textarea { -webkit-text-fill-color: #111; }
     .input-row:focus-within { border-color: var(--accent); }
 
     .btn-send {
@@ -1498,17 +1511,49 @@
   let currentColor = localStorage.getItem("accent_color") || "orange";
   let currentTheme = localStorage.getItem("theme_mode") || "system";
 
+  function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    return [r,g,b];
+  }
+
+  function tint(hex, pct, onWhite) {
+    const [r,g,b] = hexToRgb(hex);
+    const a = pct / 100;
+    if (onWhite) {
+      // blend over white
+      const rr = Math.round(r*a + 255*(1-a));
+      const gg = Math.round(g*a + 255*(1-a));
+      const bb = Math.round(b*a + 255*(1-a));
+      return `rgb(${rr},${gg},${bb})`;
+    } else {
+      return `rgba(${r},${g},${b},${a})`;
+    }
+  }
+
   function applyAccentColor(name) {
     currentColor = name;
     localStorage.setItem("accent_color", name);
     const c = ACCENT_COLORS[name];
     const root = document.documentElement.style;
-    root.setProperty("--accent",       c.accent);
-    root.setProperty("--accent-dark",  c.dark);
-    root.setProperty("--accent-dim",   c.dim);
-    root.setProperty("--accent-bg",    c.bg);
-    root.setProperty("--accent-border",c.border);
-    root.setProperty("--accent-text",  c.text);
+    root.setProperty("--accent",        c.accent);
+    root.setProperty("--accent-dark",   c.dark);
+    root.setProperty("--accent-dim",    c.dim);
+    root.setProperty("--accent-bg",     c.bg);
+    root.setProperty("--accent-border", c.border);
+    root.setProperty("--accent-text",   c.text);
+    // Precompute tint vars for Safari compatibility (no color-mix support)
+    root.setProperty("--at-8w",  tint(c.accent,  8, true));
+    root.setProperty("--at-10w", tint(c.accent, 10, true));
+    root.setProperty("--at-14w", tint(c.accent, 14, true));
+    root.setProperty("--at-15w", tint(c.accent, 15, true));
+    root.setProperty("--at-30w", tint(c.accent, 30, true));
+    root.setProperty("--at-40w", tint(c.accent, 40, true));
+    root.setProperty("--at-10t", tint(c.accent, 10, false));
+    root.setProperty("--at-12t", tint(c.accent, 12, false));
+    root.setProperty("--at-15t", tint(c.accent, 15, false));
+    root.setProperty("--at-40t", tint(c.accent, 40, false));
     // Update active swatch
     document.querySelectorAll(".color-swatch").forEach(s =>
       s.classList.toggle("active", s.dataset.color === name)
@@ -1527,20 +1572,50 @@
     );
   }
 
+  function positionPopup(menu, anchor) {
+    const r = anchor.getBoundingClientRect();
+    const mh = menu.offsetHeight || 300;
+    const spaceAbove = r.top;
+    const spaceBelow = window.innerHeight - r.bottom;
+    // Prefer above
+    if (spaceAbove > mh || spaceAbove > spaceBelow) {
+      menu.style.bottom = (window.innerHeight - r.top + 6) + "px";
+      menu.style.top = "auto";
+    } else {
+      menu.style.top = (r.bottom + 6) + "px";
+      menu.style.bottom = "auto";
+    }
+    // Align left with anchor, but keep on screen
+    let left = r.left;
+    if (left + 220 > window.innerWidth - 8) left = window.innerWidth - 228;
+    if (left < 8) left = 8;
+    menu.style.left = left + "px";
+  }
+
   function toggleUserMenu(e) {
     e.stopPropagation();
     const um = document.getElementById("userMenu");
     const sm = document.getElementById("settingsMenu");
+    const wasOpen = um.classList.contains("open");
     sm.classList.remove("open");
-    um.classList.toggle("open");
+    um.classList.toggle("open", !wasOpen);
+    if (!wasOpen) {
+      um.style.display = "flex";
+      requestAnimationFrame(() => positionPopup(um, e.currentTarget));
+    }
   }
 
   function toggleSettingsMenu(e) {
     e.stopPropagation();
     const um = document.getElementById("userMenu");
     const sm = document.getElementById("settingsMenu");
+    const wasOpen = sm.classList.contains("open");
     um.classList.remove("open");
-    sm.classList.toggle("open");
+    sm.classList.toggle("open", !wasOpen);
+    if (!wasOpen) {
+      sm.style.display = "flex";
+      requestAnimationFrame(() => positionPopup(sm, e.currentTarget));
+    }
   }
 
   function copyKeyFromMenu() {
