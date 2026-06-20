@@ -31,6 +31,7 @@
     }
 
     #sidebar.collapsed { width: 0; min-width: 0; border-right: none; }
+    .sidebar-collapsed-init #sidebar { width: 0; min-width: 0; border-right: none; transition: none; }
 
     .sidebar-top {
       padding: 0.65rem 0.65rem 0.5rem;
@@ -598,6 +599,13 @@
 </head>
 <body>
 
+<script>
+  // Apply sidebar state before first paint to avoid flash
+  if (localStorage.getItem("sidebar_open") === "0") {
+    document.documentElement.classList.add("sidebar-collapsed-init");
+  }
+</script>
+
 <!-- Delete modal -->
 <div class="modal-overlay" id="deleteModal" style="display:none;">
   <div class="modal-box">
@@ -1083,15 +1091,25 @@
     try {
       const data = await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", "https://api.groq.com/openai/v1/chat/completions");
+        xhr.open("POST", "https://api.groq.com/openai/v1/chat/completions", true);
         xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.setRequestHeader("Authorization", `Bearer ${apiKey}`);
-        xhr.onload = () => {
-          try { resolve(JSON.parse(xhr.responseText)); }
-          catch(e) { reject(new Error("Invalid JSON response")); }
+        xhr.setRequestHeader("Authorization", "Bearer " + apiKey);
+        xhr.withCredentials = false;
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try { resolve(JSON.parse(xhr.responseText)); }
+              catch(e) { reject(new Error("Invalid JSON response")); }
+            } else if (xhr.status === 0) {
+              reject(new Error("Network blocked — check if VPN or content blocker is active on this device"));
+            } else {
+              try { reject(new Error(JSON.parse(xhr.responseText)?.error?.message || "HTTP " + xhr.status)); }
+              catch(e) { reject(new Error("HTTP " + xhr.status)); }
+            }
+          }
         };
-        xhr.onerror = () => reject(new Error("Load failed"));
-        xhr.ontimeout = () => reject(new Error("Request timed out"));
+        xhr.onerror = () => reject(new Error("Network blocked — Safari may be blocking this request. Try disabling content blockers or use a different network."));
+        xhr.ontimeout = () => reject(new Error("Request timed out after 60s"));
         xhr.timeout = 60000;
         xhr.send(JSON.stringify({ model: MODEL, messages: chat.messages }));
       });
