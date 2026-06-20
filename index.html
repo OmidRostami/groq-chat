@@ -388,21 +388,29 @@
       font-family: 'Fira Code', monospace;
       font-size: 0.81em;
     }
-    .bubble pre {
-      background: #0d0d0d;
+    .code-block {
+      position: relative;
+      margin: 0.65rem 0;
       border: 1px solid #222;
       border-radius: 8px;
-      padding: 0.85rem;
+      background: #0d0d0d;
+    }
+    .code-block-header {
+      display: flex;
+      justify-content: flex-end;
+      padding: 0.3rem 0.4rem 0;
+    }
+    .bubble pre {
+      background: transparent;
+      border: none;
+      border-radius: 0 0 8px 8px;
+      padding: 0.5rem 0.85rem 0.85rem;
       overflow-x: auto;
-      margin: 0.65rem 0;
-      position: relative;
+      margin: 0;
     }
     .bubble pre code { background: none; color: #e2e8f0; padding: 0; font-size: 0.81rem; line-height: 1.6; }
 
     .copy-btn {
-      position: absolute;
-      top: 0.4rem;
-      right: 0.4rem;
       background: #1e1e1e;
       border: none;
       color: #888;
@@ -410,6 +418,7 @@
       padding: 0.16rem 0.42rem;
       border-radius: 4px;
       cursor: pointer;
+      flex-shrink: 0;
     }
     .copy-btn:hover { background: #2a2a2a; color: #fff; }
 
@@ -862,6 +871,12 @@
   /* ── Messages ── */
   function addCopyButtons(el) {
     el.querySelectorAll("pre").forEach(pre => {
+      const wrapper = document.createElement("div");
+      wrapper.className = "code-block";
+
+      const header = document.createElement("div");
+      header.className = "code-block-header";
+
       const btn = document.createElement("button");
       btn.className = "copy-btn";
       btn.textContent = "Copy";
@@ -870,7 +885,11 @@
         btn.textContent = "Copied!";
         setTimeout(()=>btn.textContent="Copy", 1500);
       };
-      pre.appendChild(btn);
+
+      header.appendChild(btn);
+      wrapper.appendChild(header);
+      pre.replaceWith(wrapper);
+      wrapper.appendChild(pre);
     });
   }
 
