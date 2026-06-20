@@ -71,6 +71,7 @@
       background: #0f0f0f;
       color: #e8e8e8;
       display: flex;
+      height: 100vh;
       height: 100dvh;
     }
 
@@ -80,6 +81,7 @@
        ════════════════════════════════════════ */
     body.layout-h {
       flex-direction: row;
+      height: 100vh;
       height: 100dvh;
       overflow: hidden;
     }
@@ -87,6 +89,7 @@
     body.layout-h #sidebar {
       width: 248px;
       min-width: 248px;
+      height: 100vh;
       height: 100dvh;
       flex-shrink: 0;
       background: #111;
@@ -94,9 +97,7 @@
       border-bottom: none;
       display: flex;
       flex-direction: column;
-      /* overflow:clip allows absolute children (popups) to escape unlike overflow:hidden */
-      overflow: hidden; /* fallback for old Safari */
-      overflow: clip;
+      overflow: hidden;
       transition: width 0.22s cubic-bezier(.4,0,.2,1), min-width 0.22s cubic-bezier(.4,0,.2,1);
     }
 
@@ -318,11 +319,6 @@
       padding: 0.55rem 0.65rem;
       flex-shrink: 0;
       position: relative;
-      /* overflow:visible so popup escapes sidebar's overflow:hidden via stacking context trick */
-      overflow: visible;
-      /* Create own stacking context so z-index works above sidebar clip */
-      isolation: isolate;
-      z-index: 10;
     }
 
     .bottom-row {
@@ -379,10 +375,7 @@
 
     /* ── Popup menus ── */
     .popup-menu {
-      position: absolute;
-      bottom: calc(100% + 8px);
-      left: 0;
-      right: 0;
+      position: fixed;
       background: #1a1a1a;
       border: 1px solid #2a2a2a;
       border-radius: 12px;
@@ -390,7 +383,8 @@
       display: none;
       flex-direction: column;
       box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-      z-index: 200;
+      z-index: 9999;
+      min-width: 200px;
     }
     .popup-menu.open { display: flex; }
     body.light .popup-menu { background: #fff !important; border-color: #e0e0e0 !important; }
@@ -990,7 +984,7 @@
       </button>
     </div>
 
-    <!-- User popup menu -->
+    <!-- User popup menu (moved to body in JS for cross-browser z-index) -->
     <div class="popup-menu" id="userMenu">
       <div class="popup-header" id="userMenuName">—</div>
       <div class="popup-divider"></div>
@@ -1005,7 +999,7 @@
       </button>
     </div>
 
-    <!-- Settings popup menu -->
+    <!-- Settings popup menu (moved to body in JS for cross-browser z-index) -->
     <div class="popup-menu" id="settingsMenu">
       <div class="popup-header">Appearance</div>
       <div class="popup-divider"></div>
@@ -1580,20 +1574,35 @@
     );
   }
 
+  function openPopup(menuId, anchor) {
+    const menu = document.getElementById(menuId);
+    // Move to body if not already there (escapes any overflow:hidden parent)
+    if (menu.parentElement !== document.body) document.body.appendChild(menu);
+    const wasOpen = menu.classList.contains("open");
+    // Close all
+    document.querySelectorAll(".popup-menu").forEach(m => m.classList.remove("open"));
+    if (wasOpen) return;
+    menu.classList.add("open");
+    // Position above the anchor button
+    const r = anchor.getBoundingClientRect();
+    const mw = 220;
+    let left = r.left;
+    if (left + mw > window.innerWidth - 8) left = window.innerWidth - mw - 8;
+    if (left < 8) left = 8;
+    menu.style.left = left + "px";
+    menu.style.bottom = (window.innerHeight - r.top + 6) + "px";
+    menu.style.top = "auto";
+    menu.style.width = mw + "px";
+  }
+
   function toggleUserMenu(e) {
     e.stopPropagation();
-    const um = document.getElementById("userMenu");
-    const sm = document.getElementById("settingsMenu");
-    sm.classList.remove("open");
-    um.classList.toggle("open");
+    openPopup("userMenu", e.currentTarget);
   }
 
   function toggleSettingsMenu(e) {
     e.stopPropagation();
-    const um = document.getElementById("userMenu");
-    const sm = document.getElementById("settingsMenu");
-    um.classList.remove("open");
-    sm.classList.toggle("open");
+    openPopup("settingsMenu", e.currentTarget);
   }
 
   function copyKeyFromMenu() {
