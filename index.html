@@ -84,6 +84,11 @@
       height: 100vh;
       overflow: hidden;
     }
+    @media (pointer: coarse) {
+      body.layout-h { height: 100dvh; }
+      body.layout-v { height: 100dvh; }
+      body { height: 100dvh; }
+    }
 
     body.layout-h #sidebar {
       width: 248px;
