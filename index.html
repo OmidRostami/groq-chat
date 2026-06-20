@@ -960,6 +960,9 @@
   .sh-preprocessor { color: #ffcb6b; }   /* yellow  — #include, #define */
   .sh-builtin      { color: #ffcb6b; }   /* yellow  — printf, echo, console.log */
   .sh-variable     { color: #f07178; }   /* red     — $var, shell variables */
+  .sh-arith-outer  { color: #c792ea; }   /* magenta — $(( outer delimiters )) */
+  .sh-arith-inner  { color: #82aaff; }   /* blue    — inner () grouping */
+  .sh-arith-ident  { color: #ffcb6b; }   /* yellow  — identifiers inside arithmetic */
   .sh-flag         { color: #c3e88d; }   /* green   — --flag, -f */
   .sh-plain        { color: #e2e8f0; }   /* default text */
 
@@ -975,6 +978,9 @@
   body.light .sh-preprocessor { color: #92400e; }
   body.light .sh-builtin      { color: #92400e; }
   body.light .sh-variable     { color: #be123c; }
+  body.light .sh-arith-outer  { color: #7c3aed; }
+  body.light .sh-arith-inner  { color: #1d4ed8; }
+  body.light .sh-arith-ident  { color: #92400e; }
   body.light .sh-flag         { color: #15803d; }
   body.light .sh-plain        { color: #1a1a1a; }
   /* ══════════════════════════════════════════════════════════ */
@@ -1321,18 +1327,105 @@
           i = j;
           continue;
         }
-        // Shell variable $VAR or ${VAR}
+        // Shell $ expansions: $((arith)), $(cmd), ${var}, $var
         if (family === 'shell' && src[i] === '$') {
           let j = i + 1;
+
+          // $((arithmetic)) — nested bracket coloring
+          if (src[j] === '(' && src[j+1] === '(') {
+            // Emit opening $((  in arith-outer color
+            result += span('arith-outer', '$((' );
+            j += 3; // skip $, (, (
+            // Now tokenize the inside until closing ))
+            // Track depth for inner () groupings
+            let depth = 0;
+            while (j < len) {
+              const ch = src[j];
+              // Closing )) at depth 0 = end of arithmetic
+              if (ch === ')' && src[j+1] === ')' && depth === 0) {
+                result += span('arith-outer', '))');
+                j += 2;
+                break;
+              }
+              // Inner ( increases depth
+              if (ch === '(') {
+                result += span('arith-inner', '(');
+                depth++;
+                j++;
+                continue;
+              }
+              // Inner ) decreases depth
+              if (ch === ')' && depth > 0) {
+                result += span('arith-inner', ')');
+                depth--;
+                j++;
+                continue;
+              }
+              // Identifier (variable name used without $)
+              if (/[a-zA-Z_]/.test(ch)) {
+                let k = j;
+                while (k < len && /[a-zA-Z0-9_]/.test(src[k])) k++;
+                result += span('arith-ident', src.slice(j, k));
+                j = k;
+                continue;
+              }
+              // Number
+              if (/[0-9]/.test(ch)) {
+                let k = j;
+                while (k < len && /[0-9]/.test(src[k])) k++;
+                result += span('number', src.slice(j, k));
+                j = k;
+                continue;
+              }
+              // Nested $var inside arithmetic
+              if (ch === '$') {
+                let k = j + 1;
+                while (k < len && /[a-zA-Z0-9_]/.test(src[k])) k++;
+                result += span('variable', src.slice(j, k));
+                j = k;
+                continue;
+              }
+              // Operators and spaces
+              if (/[+\-*/%=!<>&|^~? ]/.test(ch)) {
+                result += span('operator', ch);
+                j++;
+                continue;
+              }
+              // Anything else plain
+              result += esc(ch);
+              j++;
+            }
+            i = j;
+            continue;
+          }
+
+          // ${var} — braced variable
           if (src[j] === '{') {
             const end = src.indexOf('}', j);
             j = end === -1 ? len : end + 1;
-          } else if (src[j] === '(') {
-            const end = src.indexOf(')', j);
-            j = end === -1 ? len : end + 1;
-          } else {
-            while (j < len && /[\w]/.test(src[j])) j++;
+            result += span('variable', src.slice(i, j));
+            i = j;
+            continue;
           }
+
+          // $(cmd) — command substitution
+          if (src[j] === '(') {
+            let depth2 = 1;
+            j++;
+            result += span('variable', '$(');
+            while (j < len && depth2 > 0) {
+              if (src[j] === '(') depth2++;
+              else if (src[j] === ')') depth2--;
+              if (depth2 > 0) result += esc(src[j]);
+              else result += span('variable', ')');
+              j++;
+            }
+            i = j;
+            continue;
+          }
+
+          // $var — plain variable
+          while (j < len && /[a-zA-Z0-9_]/.test(src[j])) j++;
           result += span('variable', src.slice(i, j));
           i = j;
           continue;
