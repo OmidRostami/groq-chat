@@ -685,7 +685,7 @@
     <div class="input-bar">
       <div class="input-wrap">
         <div class="input-row">
-          <textarea id="userInput" placeholder="Type a message… (↵ new line, Ctrl+Enter to send)" rows="3"
+          <textarea id="userInput" placeholder="Type a message… (Enter to send, Shift+Enter for new line)" rows="3"
             onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
           <button class="btn-send" id="sendBtn" onclick="sendMessage()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -719,6 +719,14 @@
     apiKey   = localStorage.getItem(KEY_STORE) || "";
     userName = localStorage.getItem(NAME_STORE) || "";
     chats    = JSON.parse(localStorage.getItem(CHATS_STORE) || "{}");
+    // Restore sidebar state
+    const savedSidebar = localStorage.getItem("sidebar_open");
+    if (savedSidebar === "0") {
+      sidebarOpen = false;
+      document.getElementById("sidebar").classList.add("collapsed");
+      document.getElementById("iconOpen").style.display = "none";
+      document.getElementById("iconClosed").style.display = "";
+    }
     if (apiKey && userName) showApp();
   }
 
@@ -776,6 +784,7 @@
     document.getElementById("sidebar").classList.toggle("collapsed", !sidebarOpen);
     document.getElementById("iconOpen").style.display   = sidebarOpen ? "" : "none";
     document.getElementById("iconClosed").style.display = sidebarOpen ? "none" : "";
+    localStorage.setItem("sidebar_open", sidebarOpen ? "1" : "0");
   }
 
   /* ── Chat CRUD ── */
@@ -1072,17 +1081,20 @@
     const thinkingEl = appendThinking();
 
     try {
-      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        mode: "cors",
-        cache: "no-cache",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({ model: MODEL, messages: chat.messages }),
+      const data = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "https://api.groq.com/openai/v1/chat/completions");
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("Authorization", `Bearer ${apiKey}`);
+        xhr.onload = () => {
+          try { resolve(JSON.parse(xhr.responseText)); }
+          catch(e) { reject(new Error("Invalid JSON response")); }
+        };
+        xhr.onerror = () => reject(new Error("Load failed"));
+        xhr.ontimeout = () => reject(new Error("Request timed out"));
+        xhr.timeout = 60000;
+        xhr.send(JSON.stringify({ model: MODEL, messages: chat.messages }));
       });
-      const data = await res.json();
       thinkingEl.remove();
       const reply = data.error
         ? "Error: "+data.error.message
@@ -1100,11 +1112,11 @@
   }
 
   function handleKey(e) {
-    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
-    // All other keys (arrows, shift+enter, etc.) pass through naturally
+    // Shift+Enter and arrow keys pass through naturally for multiline
   }
 
   function autoResize(el) {
