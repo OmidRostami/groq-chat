@@ -753,9 +753,18 @@
     }
     .code-block-header {
       display: flex;
-      justify-content: flex-end;
-      padding: 0.4rem 0.4rem 0;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.4rem 0.6rem 0;
     }
+    .sh-lang-label {
+      font-size: 0.65rem;
+      color: #555;
+      font-family: 'Fira Code', monospace;
+      text-transform: lowercase;
+      letter-spacing: 0.05em;
+    }
+    body.light .sh-lang-label { color: #aaa; }
     .bubble pre {
       background: transparent;
       border: none;
@@ -928,6 +937,48 @@
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+
+  /* ══════════════════════════════════════════════════════════
+     SYNTAX HIGHLIGHTER — isolated, prefix: sh-
+     All colors defined here, zero overlap with site CSS.
+     Dark palette used by default; light overrides below.
+     ══════════════════════════════════════════════════════════ */
+  #sh-styles {
+    /* This block is intentionally separate for easy editing */
+  }
+
+  /* Token colors — dark mode */
+  .sh-block        { display: block; font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace; font-size: 0.81rem; line-height: 1.65; white-space: pre; }
+  .sh-keyword      { color: #c792ea; }   /* purple  — if, for, return, const... */
+  .sh-type         { color: #82aaff; }   /* blue    — int, void, struct, char... */
+  .sh-string       { color: #c3e88d; }   /* green   — "hello", 'world' */
+  .sh-comment      { color: #546e7a; font-style: italic; }  /* gray-blue — // ... */
+  .sh-number       { color: #f78c6c; }   /* orange  — 42, 3.14, 0xff */
+  .sh-function     { color: #82aaff; }   /* blue    — function names */
+  .sh-operator     { color: #89ddff; }   /* cyan    — = + - * / && || */
+  .sh-punctuation  { color: #89ddff; }   /* cyan    — { } ( ) ; , */
+  .sh-preprocessor { color: #ffcb6b; }   /* yellow  — #include, #define */
+  .sh-builtin      { color: #ffcb6b; }   /* yellow  — printf, echo, console.log */
+  .sh-variable     { color: #f07178; }   /* red     — $var, shell variables */
+  .sh-flag         { color: #c3e88d; }   /* green   — --flag, -f */
+  .sh-plain        { color: #e2e8f0; }   /* default text */
+
+  /* Token colors — light mode overrides */
+  body.light .sh-keyword      { color: #7c3aed; }
+  body.light .sh-type         { color: #1d4ed8; }
+  body.light .sh-string       { color: #15803d; }
+  body.light .sh-comment      { color: #94a3b8; }
+  body.light .sh-number       { color: #c2410c; }
+  body.light .sh-function     { color: #1d4ed8; }
+  body.light .sh-operator     { color: #0369a1; }
+  body.light .sh-punctuation  { color: #0369a1; }
+  body.light .sh-preprocessor { color: #92400e; }
+  body.light .sh-builtin      { color: #92400e; }
+  body.light .sh-variable     { color: #be123c; }
+  body.light .sh-flag         { color: #15803d; }
+  body.light .sh-plain        { color: #1a1a1a; }
+  /* ══════════════════════════════════════════════════════════ */
+
   </style>
 </head>
 <body>
@@ -1142,13 +1193,231 @@
   let sidebarOpen = true;
   let pendingDeleteId = null;
 
+  /* ══════════════════════════════════════════════════════════
+     SYNTAX HIGHLIGHTER — isolated module
+     Entry point: SH.highlight(code, lang) -> HTML string
+     Internal helpers prefixed _sh to avoid collisions.
+     Edit only this block for syntax highlighting changes.
+     ══════════════════════════════════════════════════════════ */
+  const SH = (() => {
+    function esc(s) {
+      // Use split/join instead of regex to avoid HTML parser issues with < > in <script>
+      return s.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;');
+    }
+    function span(cls, txt) {
+      return `<span class="sh-${cls}">${esc(txt)}</span>`;
+    }
+
+    // ── Token definitions per language family — use Sets for fast lookup ──
+    const LANG = {
+      c: {
+        keywords: new Set(['if','else','for','while','do','switch','case','break','continue','return','goto','typedef','struct','union','enum','sizeof','static','extern','const','volatile','register','auto','inline','void','int','char','short','long','float','double','unsigned','signed','NULL','true','false']),
+        builtins: new Set(['printf','scanf','fprintf','fscanf','sprintf','sscanf','fopen','fclose','fread','fwrite','fgets','fputs','feof','fflush','malloc','calloc','realloc','free','memcpy','memmove','memset','strlen','strcpy','strncpy','strcmp','strncmp','strcat','strncat','strchr','strstr','atoi','atof','exit','abort']),
+      },
+      js: {
+        keywords: new Set(['if','else','for','while','do','switch','case','break','continue','return','throw','try','catch','finally','new','delete','typeof','instanceof','in','of','void','yield','await','async','class','extends','super','import','export','default','from','const','let','var','function','this','null','undefined','true','false','NaN','Infinity']),
+        builtins: new Set(['console','Math','JSON','Object','Array','String','Number','Boolean','Promise','Date','Error','Map','Set','setTimeout','setInterval','clearTimeout','clearInterval','fetch','require','module','exports','process','Buffer']),
+      },
+      python: {
+        keywords: new Set(['if','elif','else','for','while','break','continue','return','pass','raise','try','except','finally','with','as','import','from','class','def','lambda','yield','global','nonlocal','del','assert','in','not','and','or','is','None','True','False']),
+        builtins: new Set(['print','len','range','type','int','str','float','list','dict','set','tuple','bool','input','open','enumerate','zip','map','filter','sorted','reversed','sum','min','max','abs','round','repr','hasattr','getattr','setattr','isinstance','super']),
+      },
+      shell: {
+        keywords: new Set(['if','then','else','elif','fi','for','while','do','done','case','esac','in','function','return','exit','local','export','readonly','unset','shift','source','trap','continue','break']),
+        builtins: new Set(['echo','printf','read','cd','ls','pwd','mkdir','rmdir','rm','cp','mv','cat','grep','sed','awk','find','chmod','chown','curl','wget','tar','zip','unzip','git','npm','node','python','python3','pip','brew','apt','sudo','ssh','rsync','sort','uniq','head','tail','wc','cut','tr','xargs']),
+      },
+      json: { keywords: new Set(), builtins: new Set() },
+    };
+
+    const LANG_MAP = {
+      c: 'c', h: 'c',
+      js: 'js', javascript: 'js', ts: 'js', typescript: 'js', node: 'js',
+      py: 'python', python: 'python',
+      sh: 'shell', bash: 'shell', zsh: 'shell', shell: 'shell',
+      json: 'json',
+    };
+
+    // ── Core tokenizer ──
+    function highlight(raw, lang) {
+      const family = LANG_MAP[lang?.toLowerCase()] || null;
+      if (!family || family === 'json') return `<code class="sh-block sh-plain">${esc(raw)}</code>`;
+
+      const def = LANG[family];
+      // We tokenize by finding regions in order: comments, strings, preprocessor, then keywords
+      // Use a combined regex approach: find all special regions first, protect them, then apply keywords
+
+      let result = '';
+      let i = 0;
+      const src = raw;
+      const len = src.length;
+
+      while (i < len) {
+        // Single-line comment //
+        if ((family === 'c' || family === 'js') && src[i] === '/' && src[i+1] === '/') {
+          const end = src.indexOf('\n', i);
+          const e = end === -1 ? len : end;
+          result += span('comment', src.slice(i, e));
+          i = e;
+          continue;
+        }
+        // Multi-line comment /* */
+        if ((family === 'c' || family === 'js') && src[i] === '/' && src[i+1] === '*') {
+          const end = src.indexOf('*/', i+2);
+          const e = end === -1 ? len : end + 2;
+          result += span('comment', src.slice(i, e));
+          i = e;
+          continue;
+        }
+        // Shell/Python # comment
+        if ((family === 'shell' || family === 'python') && src[i] === '#') {
+          // but not shebang on line 0 — still color it as comment
+          const end = src.indexOf('\n', i);
+          const e = end === -1 ? len : end;
+          result += span('comment', src.slice(i, e));
+          i = e;
+          continue;
+        }
+        // C preprocessor
+        if (family === 'c' && src[i] === '#') {
+          const end = src.indexOf('\n', i);
+          const e = end === -1 ? len : end;
+          result += span('preprocessor', src.slice(i, e));
+          i = e;
+          continue;
+        }
+        // Double-quoted string
+        if (src[i] === '"') {
+          let j = i + 1;
+          while (j < len) {
+            if (src[j] === '\\') { j += 2; continue; }
+            if (src[j] === '"') { j++; break; }
+            j++;
+          }
+          result += span('string', src.slice(i, j));
+          i = j;
+          continue;
+        }
+        // Single-quoted string
+        if (src[i] === "'") {
+          let j = i + 1;
+          while (j < len) {
+            if (src[j] === '\\') { j += 2; continue; }
+            if (src[j] === "'") { j++; break; }
+            j++;
+          }
+          result += span('string', src.slice(i, j));
+          i = j;
+          continue;
+        }
+        // Backtick string (JS/shell)
+        if ((family === 'js' || family === 'shell') && src[i] === '`') {
+          let j = i + 1;
+          while (j < len) {
+            if (src[j] === '\\') { j += 2; continue; }
+            if (src[j] === '`') { j++; break; }
+            j++;
+          }
+          result += span('string', src.slice(i, j));
+          i = j;
+          continue;
+        }
+        // Shell variable $VAR or ${VAR}
+        if (family === 'shell' && src[i] === '$') {
+          let j = i + 1;
+          if (src[j] === '{') {
+            const end = src.indexOf('}', j);
+            j = end === -1 ? len : end + 1;
+          } else if (src[j] === '(') {
+            const end = src.indexOf(')', j);
+            j = end === -1 ? len : end + 1;
+          } else {
+            while (j < len && /[\w]/.test(src[j])) j++;
+          }
+          result += span('variable', src.slice(i, j));
+          i = j;
+          continue;
+        }
+        // Shell flags --flag or -f
+        if (family === 'shell' && src[i] === '-' && (src[i+1] === '-' || /[a-zA-Z]/.test(src[i+1] || ''))) {
+          let j = i + 1;
+          while (j < len && /[\w-]/.test(src[j])) j++;
+          result += span('flag', src.slice(i, j));
+          i = j;
+          continue;
+        }
+        // Number
+        if (/[0-9]/.test(src[i]) || (src[i] === '0' && (src[i+1] === 'x' || src[i+1] === 'X'))) {
+          let j = i;
+          if (src[j] === '0' && /[xX]/.test(src[j+1])) {
+            j += 2;
+            while (j < len && /[0-9a-fA-F]/.test(src[j])) j++;
+          } else {
+            while (j < len && /[0-9._]/.test(src[j])) j++;
+          }
+          result += span('number', src.slice(i, j));
+          i = j;
+          continue;
+        }
+        // Identifier — check if keyword or builtin
+        if (/[a-zA-Z_]/.test(src[i])) {
+          let j = i;
+          while (j < len && /[a-zA-Z0-9_]/.test(src[j])) j++;
+          const word = src.slice(i, j);
+          // Check next non-space char for function call detection
+          let k = j; while (k < len && src[k] === ' ') k++;
+          const isCall = src[k] === '(';
+
+          const kwMatch = def.keywords && def.keywords.has(word);
+          const blMatch = def.builtins && def.builtins.has(word);
+
+          if (kwMatch) result += span('keyword', word);
+          else if (blMatch) result += span('builtin', word);
+          else if (isCall) result += span('function', word);
+          else result += span('plain', word);
+          i = j;
+          continue;
+        }
+        // Operator
+        if (/[+\-*/%=!<>&|^~?:]/.test(src[i])) {
+          result += span('operator', src[i]);
+          i++;
+          continue;
+        }
+        // Punctuation
+        if (/[{}()[\];,.]/.test(src[i])) {
+          result += span('punctuation', src[i]);
+          i++;
+          continue;
+        }
+        // Anything else (whitespace, newlines)
+        result += esc(src[i]);
+        i++;
+      }
+
+      return `<code class="sh-block">${result}</code>`;
+    }
+
+    return { highlight };
+  })();
+  /* ══════════════════════════════════════════════════════════
+     END SYNTAX HIGHLIGHTER
+     ══════════════════════════════════════════════════════════ */
+
   marked.setOptions({ breaks: true, gfm: true });
 
-  // Override link renderer to open in new tab
+  // Override renderers: links open in new tab, code blocks use SH highlighter
   const renderer = new marked.Renderer();
   renderer.link = function(href, title, text) {
     const t = title ? ` title="${title}"` : '';
     return `<a href="${href}"${t} target="_blank" rel="noopener noreferrer">${text}</a>`;
+  };
+  renderer.code = function(code, lang) {
+    // Store raw code on the element via data attr for clean copy
+    const highlighted = SH.highlight(code, lang || '');
+    const langLabel = lang ? `<span class="sh-lang-label">${lang}</span>` : '';
+    // Use data-raw to store original text for copy (no HTML entities issues)
+    const rawB64 = btoa(unescape(encodeURIComponent(code)));
+    return `<div class="code-block"><div class="code-block-header">${langLabel}<button class="copy-btn" data-raw="${rawB64}">Copy</button></div><pre>${highlighted}</pre></div>`;
   };
   marked.setOptions({ renderer });
 
@@ -1427,22 +1696,35 @@
 
   /* ── Messages ── */
   function addCopyButtons(el) {
-    el.querySelectorAll("pre").forEach(pre => {
+    // Attach click handlers to copy-btn elements rendered by the marked code renderer
+    el.querySelectorAll(".copy-btn[data-raw]").forEach(btn => {
+      btn.onclick = () => {
+        try {
+          const text = decodeURIComponent(escape(atob(btn.dataset.raw)));
+          navigator.clipboard.writeText(text);
+        } catch(e) {
+          // fallback: get innerText from the pre
+          const pre = btn.closest(".code-block")?.querySelector("pre");
+          if (pre) navigator.clipboard.writeText(pre.innerText);
+        }
+        btn.textContent = "Copied!";
+        setTimeout(() => btn.textContent = "Copy", 1500);
+      };
+    });
+    // Also handle any bare pre blocks that weren't caught by the renderer
+    el.querySelectorAll("pre:not(.code-block pre)").forEach(pre => {
       const wrapper = document.createElement("div");
       wrapper.className = "code-block";
-
       const header = document.createElement("div");
       header.className = "code-block-header";
-
       const btn = document.createElement("button");
       btn.className = "copy-btn";
       btn.textContent = "Copy";
       btn.onclick = () => {
-        navigator.clipboard.writeText(pre.querySelector("code")?.innerText || pre.innerText);
+        navigator.clipboard.writeText(pre.innerText);
         btn.textContent = "Copied!";
-        setTimeout(()=>btn.textContent="Copy", 1500);
+        setTimeout(() => btn.textContent = "Copy", 1500);
       };
-
       header.appendChild(btn);
       wrapper.appendChild(header);
       pre.replaceWith(wrapper);
