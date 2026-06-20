@@ -27,12 +27,13 @@
     }
     body.light { background: var(--bg) !important; color: var(--text) !important; }
     body.light #sidebar { background: var(--bg2) !important; border-color: var(--border) !important; }
-    body.light .top-bar, body.light .input-bar { background: var(--bg2) !important; border-color: var(--border) !important; }
+    body.light .top-bar { background: var(--bg2) !important; border-color: var(--border) !important; }
     body.light .messages { background: var(--bg) !important; }
+    body.light .input-bar { background: transparent !important; border-top: none !important; }
     body.light .msg.assistant .bubble { background: var(--bg2) !important; border-color: var(--border) !important; color: var(--text) !important; }
-    body.light .chat-item:hover { background: var(--bg3) !important; }
-    body.light .chat-item.active { background: #fff3e8 !important; }
-    body.light .input-row { background: var(--bg2) !important; border-color: var(--border) !important; }
+    body.light .chat-item:hover { background: rgba(0,0,0,0.05) !important; }
+    body.light .chat-item.active { background: color-mix(in srgb, var(--accent) 12%, transparent) !important; }
+    body.light .input-row { background: #ffffff !important; border-color: #ddd !important; box-shadow: 0 4px 24px rgba(0,0,0,0.12) !important; }
     body.light textarea { color: var(--text) !important; }
     body.light .popup-menu { background: var(--bg2) !important; border-color: var(--border) !important; }
     body.light .popup-item { color: var(--text2) !important; }
@@ -245,7 +246,7 @@
       cursor: pointer;
       position: relative;
     }
-    .chat-item:hover { background: #1c1c1c; }
+    .chat-item:hover { background: rgba(255,255,255,0.04); }
     .chat-item.active { background: var(--accent-bg); }
 
     .chat-pin-icon {
@@ -352,7 +353,7 @@
       padding: 0;
     }
     .bottom-icon-btn svg { width: 16px; height: 16px; }
-    .bottom-icon-btn:hover { color: #ccc; background: #1e1e1e; }
+    .bottom-icon-btn:hover { color: var(--accent); background: transparent; }
 
     /* ── Popup menus ── */
     .popup-menu {
@@ -407,7 +408,7 @@
       width: 100%;
     }
     .popup-item svg { width: 14px; height: 14px; flex-shrink: 0; }
-    .popup-item:hover { background: #222; color: #f0f0f0; }
+    .popup-item:hover { background: rgba(255,255,255,0.06); color: var(--accent); }
     .popup-item.danger { color: #888; }
     .popup-item.danger:hover { background: #1f0e0e; color: #f87171; }
 
@@ -488,7 +489,7 @@
       justify-content: center;
       flex-shrink: 0;
     }
-    .btn-toggle:hover { color: #ddd; background: #1e1e1e; }
+    .btn-toggle:hover { color: var(--accent); background: transparent; }
     .btn-toggle svg { width: 18px; height: 18px; }
 
     #chat-title {
@@ -594,8 +595,10 @@
       font-weight: 700;
       margin-top: 2px;
     }
-    .msg.user .avatar { background: #f97316; color: #fff; }
-    .msg.assistant .avatar { background: #1c1c1c; color: #888; border: 1px solid #2a2a2a; }
+    .msg.user .avatar { background: var(--accent); color: #fff; }
+    .msg.assistant .avatar { background: #1c1c1c; color: #aaa; border: 1px solid #2a2a2a; }
+    body.light .msg.assistant .avatar { background: #e0e0e0 !important; color: #555 !important; border-color: #ccc !important; }
+    body.light .msg.user .bubble { background: color-mix(in srgb, var(--accent) 15%, white) !important; border-color: color-mix(in srgb, var(--accent) 30%, white) !important; color: #1a1a1a !important; }
 
     .msg-body {
       display: flex;
@@ -639,7 +642,7 @@
       cursor: pointer;
       transition: color 0.15s, border-color 0.15s;
     }
-    .msg-action-btn:hover { color: var(--accent); border-color: var(--accent-dim); }
+    .msg-action-btn:hover { color: var(--accent); border-color: var(--accent); }
 
     /* Markdown */
     .bubble p { margin: 0 0 0.65rem; }
@@ -768,7 +771,7 @@
       flex-shrink: 0;
       transition: background 0.15s;
     }
-    .btn-send:hover { background: #ea6c0a; }
+    .btn-send:hover { background: var(--accent-dark); }
     .btn-send:disabled { background: #2a2a2a; cursor: not-allowed; }
     .btn-send svg { width: 15px; height: 15px; }
 
@@ -1422,11 +1425,11 @@
   /* ── Send ── */
   /* ── User & Settings menus ── */
   const ACCENT_COLORS = {
-    orange: { accent:'#f97316', dark:'#ea6c0a', dim:'#7c3a0a', bg:'#1c1008', border:'#7c2d12', text:'#fed7aa' },
-    green:  { accent:'#22c55e', dark:'#16a34a', dim:'#14532d', bg:'#0a1f0e', border:'#14532d', text:'#bbf7d0' },
-    blue:   { accent:'#3b82f6', dark:'#2563eb', dim:'#1e3a8a', bg:'#080f1f', border:'#1e3a8a', text:'#bfdbfe' },
-    purple: { accent:'#a855f7', dark:'#9333ea', dim:'#581c87', bg:'#130a1f', border:'#581c87', text:'#e9d5ff' },
-    gray:   { accent:'#6b7280', dark:'#4b5563', dim:'#374151', bg:'#111214', border:'#374151', text:'#e5e7eb' },
+    orange: { accent:'#f97316', dark:'#ea6c0a', dim:'#7c3a0a', bg:'#231206', border:'#9a3412', text:'#fed7aa' },
+    green:  { accent:'#22c55e', dark:'#16a34a', dim:'#14532d', bg:'#0d2a12', border:'#166534', text:'#bbf7d0' },
+    blue:   { accent:'#3b82f6', dark:'#2563eb', dim:'#1e3a8a', bg:'#0d1a35', border:'#1e40af', text:'#bfdbfe' },
+    purple: { accent:'#a855f7', dark:'#9333ea', dim:'#581c87', bg:'#1e0a35', border:'#6b21a8', text:'#e9d5ff' },
+    gray:   { accent:'#6b7280', dark:'#4b5563', dim:'#374151', bg:'#18191b', border:'#4b5563', text:'#e5e7eb' },
   };
 
   let currentColor = localStorage.getItem("accent_color") || "orange";
