@@ -94,7 +94,9 @@
       border-bottom: none;
       display: flex;
       flex-direction: column;
-      overflow: visible;
+      /* overflow:clip allows absolute children (popups) to escape unlike overflow:hidden */
+      overflow: hidden; /* fallback for old Safari */
+      overflow: clip;
       transition: width 0.22s cubic-bezier(.4,0,.2,1), min-width 0.22s cubic-bezier(.4,0,.2,1);
     }
 
@@ -316,7 +318,11 @@
       padding: 0.55rem 0.65rem;
       flex-shrink: 0;
       position: relative;
+      /* overflow:visible so popup escapes sidebar's overflow:hidden via stacking context trick */
       overflow: visible;
+      /* Create own stacking context so z-index works above sidebar clip */
+      isolation: isolate;
+      z-index: 10;
     }
 
     .bottom-row {
@@ -373,7 +379,10 @@
 
     /* ── Popup menus ── */
     .popup-menu {
-      position: fixed;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 0;
+      right: 0;
       background: #1a1a1a;
       border: 1px solid #2a2a2a;
       border-radius: 12px;
@@ -382,7 +391,6 @@
       flex-direction: column;
       box-shadow: 0 8px 32px rgba(0,0,0,0.6);
       z-index: 200;
-      width: 220px;
     }
     .popup-menu.open { display: flex; }
     body.light .popup-menu { background: #fff !important; border-color: #e0e0e0 !important; }
@@ -1572,50 +1580,20 @@
     );
   }
 
-  function positionPopup(menu, anchor) {
-    const r = anchor.getBoundingClientRect();
-    const mh = menu.offsetHeight || 300;
-    const spaceAbove = r.top;
-    const spaceBelow = window.innerHeight - r.bottom;
-    // Prefer above
-    if (spaceAbove > mh || spaceAbove > spaceBelow) {
-      menu.style.bottom = (window.innerHeight - r.top + 6) + "px";
-      menu.style.top = "auto";
-    } else {
-      menu.style.top = (r.bottom + 6) + "px";
-      menu.style.bottom = "auto";
-    }
-    // Align left with anchor, but keep on screen
-    let left = r.left;
-    if (left + 220 > window.innerWidth - 8) left = window.innerWidth - 228;
-    if (left < 8) left = 8;
-    menu.style.left = left + "px";
-  }
-
   function toggleUserMenu(e) {
     e.stopPropagation();
     const um = document.getElementById("userMenu");
     const sm = document.getElementById("settingsMenu");
-    const wasOpen = um.classList.contains("open");
     sm.classList.remove("open");
-    um.classList.toggle("open", !wasOpen);
-    if (!wasOpen) {
-      um.style.display = "flex";
-      requestAnimationFrame(() => positionPopup(um, e.currentTarget));
-    }
+    um.classList.toggle("open");
   }
 
   function toggleSettingsMenu(e) {
     e.stopPropagation();
     const um = document.getElementById("userMenu");
     const sm = document.getElementById("settingsMenu");
-    const wasOpen = sm.classList.contains("open");
     um.classList.remove("open");
-    sm.classList.toggle("open", !wasOpen);
-    if (!wasOpen) {
-      sm.style.display = "flex";
-      requestAnimationFrame(() => positionPopup(sm, e.currentTarget));
-    }
+    sm.classList.toggle("open");
   }
 
   function copyKeyFromMenu() {
