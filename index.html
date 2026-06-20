@@ -28,10 +28,51 @@
       height: 100vh;
       transition: width 0.22s cubic-bezier(.4,0,.2,1), min-width 0.22s cubic-bezier(.4,0,.2,1);
       overflow: hidden;
+      flex-shrink: 0;
     }
 
     #sidebar.collapsed { width: 0; min-width: 0; border-right: none; }
     .sidebar-collapsed-init #sidebar { width: 0; min-width: 0; border-right: none; transition: none; }
+
+    /* ── Mobile: sidebar becomes top drawer ── */
+    @media (max-width: 640px) {
+      body { flex-direction: column; }
+
+      #sidebar {
+        width: 100% !important;
+        min-width: 0 !important;
+        height: 0;
+        border-right: none;
+        border-bottom: 1px solid #1e1e1e;
+        transition: height 0.22s cubic-bezier(.4,0,.2,1);
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      #sidebar.drawer-open {
+        height: auto;
+        max-height: 55vh;
+        overflow-y: auto;
+      }
+
+      #sidebar.collapsed { width: 100% !important; min-width: 0 !important; height: 0; }
+
+      .sidebar-bottom { display: none; }
+
+      #main { height: 0; flex: 1; min-height: 0; }
+
+      .messages { padding: 0.75rem 0.5rem 0.5rem; }
+
+      .msg { max-width: 100%; }
+
+      .input-bar { padding: 0.5rem 0.5rem 0.75rem; }
+
+      .input-wrap { padding-left: 0 !important; }
+
+      .input-row { max-width: 100% !important; margin-left: 0 !important; }
+
+      .top-bar { padding: 0.5rem 0.75rem; }
+    }
 
     .sidebar-top {
       padding: 0.65rem 0.65rem 0.5rem;
@@ -727,15 +768,27 @@
     apiKey   = localStorage.getItem(KEY_STORE) || "";
     userName = localStorage.getItem(NAME_STORE) || "";
     chats    = JSON.parse(localStorage.getItem(CHATS_STORE) || "{}");
-    // Restore sidebar state
+    // Restore sidebar state (var + icons must match the CSS class already applied)
     const savedSidebar = localStorage.getItem("sidebar_open");
-    if (savedSidebar === "0") {
-      sidebarOpen = false;
-      document.getElementById("sidebar").classList.add("collapsed");
-      document.getElementById("iconOpen").style.display = "none";
-      document.getElementById("iconClosed").style.display = "";
-    }
+    sidebarOpen = savedSidebar !== "0";
+    applySidebarState(false); // false = no animation on load
     if (apiKey && userName) showApp();
+  }
+
+  function applySidebarState(animate) {
+    const sidebar = document.getElementById("sidebar");
+    const iconOpen = document.getElementById("iconOpen");
+    const iconClosed = document.getElementById("iconClosed");
+    if (!sidebar) return;
+    if (!animate) sidebar.style.transition = "none";
+    sidebar.classList.toggle("collapsed", !sidebarOpen);
+    // On mobile, toggle top-drawer class instead
+    if (window.innerWidth <= 640) {
+      sidebar.classList.toggle("drawer-open", sidebarOpen);
+    }
+    if (iconOpen) iconOpen.style.display = sidebarOpen ? "" : "none";
+    if (iconClosed) iconClosed.style.display = sidebarOpen ? "none" : "";
+    if (!animate) requestAnimationFrame(() => sidebar.style.transition = "");
   }
 
   function saveChats() { localStorage.setItem(CHATS_STORE, JSON.stringify(chats)); }
@@ -789,10 +842,8 @@
   /* ── Sidebar toggle ── */
   function toggleSidebar() {
     sidebarOpen = !sidebarOpen;
-    document.getElementById("sidebar").classList.toggle("collapsed", !sidebarOpen);
-    document.getElementById("iconOpen").style.display   = sidebarOpen ? "" : "none";
-    document.getElementById("iconClosed").style.display = sidebarOpen ? "none" : "";
     localStorage.setItem("sidebar_open", sidebarOpen ? "1" : "0");
+    applySidebarState(true);
   }
 
   /* ── Chat CRUD ── */
@@ -1065,6 +1116,30 @@
   }
 
   /* ── Send ── */
+  function xhrPost(url, key, body) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", url, true);
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.setRequestHeader("Authorization", "Bearer " + key);
+      xhr.withCredentials = false;
+      xhr.timeout = 60000;
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState !== 4) return;
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try { resolve(JSON.parse(xhr.responseText)); }
+          catch(e) { reject(new Error("Invalid JSON")); }
+        } else {
+          try { reject(new Error(JSON.parse(xhr.responseText)?.error?.message || "HTTP " + xhr.status)); }
+          catch(e) { reject(new Error("HTTP " + xhr.status)); }
+        }
+      };
+      xhr.onerror = () => reject(new Error("blocked"));
+      xhr.ontimeout = () => reject(new Error("timeout"));
+      xhr.send(body);
+    });
+  }
+
   async function sendMessage() {
     const input = document.getElementById("userInput");
     const text = input.value.trim();
@@ -1089,30 +1164,11 @@
     const thinkingEl = appendThinking();
 
     try {
-      const data = await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", "https://api.groq.com/openai/v1/chat/completions", true);
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.setRequestHeader("Authorization", "Bearer " + apiKey);
-        xhr.withCredentials = false;
-        xhr.onreadystatechange = function() {
-          if (xhr.readyState === 4) {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              try { resolve(JSON.parse(xhr.responseText)); }
-              catch(e) { reject(new Error("Invalid JSON response")); }
-            } else if (xhr.status === 0) {
-              reject(new Error("Network blocked — check if VPN or content blocker is active on this device"));
-            } else {
-              try { reject(new Error(JSON.parse(xhr.responseText)?.error?.message || "HTTP " + xhr.status)); }
-              catch(e) { reject(new Error("HTTP " + xhr.status)); }
-            }
-          }
-        };
-        xhr.onerror = () => reject(new Error("Network blocked — Safari may be blocking this request. Try disabling content blockers or use a different network."));
-        xhr.ontimeout = () => reject(new Error("Request timed out after 60s"));
-        xhr.timeout = 60000;
-        xhr.send(JSON.stringify({ model: MODEL, messages: chat.messages }));
-      });
+      const payload = JSON.stringify({ model: MODEL, messages: chat.messages });
+
+      // Try direct first, fall back to CORS proxy if blocked (VPN / iOS Safari)
+      const data = await xhrPost("https://api.groq.com/openai/v1/chat/completions", apiKey, payload)
+        .catch(() => xhrPost("https://corsproxy.io/?url=https://api.groq.com/openai/v1/chat/completions", apiKey, payload));
       thinkingEl.remove();
       const reply = data.error
         ? "Error: "+data.error.message
