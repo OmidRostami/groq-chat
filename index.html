@@ -427,7 +427,7 @@
     .code-block-header {
       display: flex;
       justify-content: flex-end;
-      padding: 0.3rem 0.4rem 0;
+      padding: 0.4rem 0.4rem 0;
     }
     .bubble pre {
       background: transparent;
@@ -470,6 +470,7 @@
       min-width: 0;
       display: flex;
       justify-content: center;
+      padding-left: 38px;
     }
 
     .input-row {
@@ -477,13 +478,11 @@
       align-items: flex-end;
       gap: 0.55rem;
       width: 100%;
-      max-width: 780px;
-      /* 38px left offset matches avatar+gap so dock aligns with bubble content */
-      margin-left: 38px;
+      max-width: 742px;
       background: #1c1c1c;
       border: 1px solid #2e2e2e;
       border-radius: 16px;
-      padding: 0.55rem 0.55rem 0.55rem 1rem;
+      padding: 0.55rem;
       box-shadow: 0 4px 24px rgba(0,0,0,0.45);
     }
 
@@ -494,7 +493,7 @@
       border: none;
       color: #f0f0f0;
       font-size: 0.88rem;
-      padding: 0;
+      padding: 0.4rem 0.5rem;
       resize: none;
       min-height: 52px;
       max-height: 240px;
@@ -502,7 +501,9 @@
       outline: none;
       font-family: inherit;
       overflow-y: auto;
+      scrollbar-width: none;
     }
+    textarea::-webkit-scrollbar { display: none; }
     textarea:focus { outline: none; }
     .input-row:focus-within { border-color: #f97316; }
 
