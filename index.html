@@ -83,11 +83,12 @@
     .chat-item.active { background: #251508; }
 
     .chat-pin-icon {
-      font-size: 0.65rem;
+      display: flex;
+      align-items: center;
       color: #f97316;
       margin-right: 0.35rem;
       flex-shrink: 0;
-      opacity: 0.7;
+      opacity: 0.8;
     }
 
     .chat-item-name {
@@ -125,7 +126,8 @@
     }
     .icon-btn:hover { color: #ddd; background: #2a2a2a; }
     .icon-btn.del:hover { color: #f87171; background: #1f0e0e; }
-    .icon-btn svg { width: 13px; height: 13px; }
+    .icon-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+    .icon-btn.del svg { width: 13px; height: 13px; }
 
     /* Sidebar bottom */
     .sidebar-bottom {
@@ -557,7 +559,7 @@
       justify-content: center;
       margin-bottom: 0.25rem;
     }
-    .modal-icon svg { width: 20px; height: 20px; color: #f87171; }
+    .modal-icon svg { width: 20px; height: 20px; min-width: 20px; min-height: 20px; color: #f87171; }
     .modal-title { font-size: 1rem; font-weight: 600; color: #f0f0f0; }
     .modal-desc { font-size: 0.83rem; color: #777; line-height: 1.5; }
     .modal-actions { display: flex; gap: 0.6rem; margin-top: 0.5rem; }
@@ -874,7 +876,7 @@
       if (chat.pinned) {
         const pin = document.createElement("div");
         pin.className = "chat-pin-icon";
-        pin.textContent = "📌";
+        pin.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>`;
         item.appendChild(pin);
       }
 
