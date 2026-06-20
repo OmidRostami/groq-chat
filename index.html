@@ -44,7 +44,10 @@
     body.light .chat-item-name { color: var(--text2) !important; }
     body.light #chat-title { color: var(--text3) !important; }
     body.light .bubble p, body.light .bubble li { color: var(--text) !important; }
-    body.light .bubble code { background: #f0f0f0 !important; }
+    body.light .bubble { color: var(--text) !important; }
+    body.light .bubble strong { color: #111 !important; font-weight: 700 !important; }
+    body.light .bubble h1, body.light .bubble h2, body.light .bubble h3 { color: #111 !important; }
+    body.light .bubble code { background: #ebebeb !important; color: var(--accent) !important; }
     body.light .bubble pre { background: #f0f0f0 !important; border-color: var(--border) !important; }
     body.light .bubble pre code { color: #222 !important; }
     body.light .code-block { background: #f0f0f0 !important; border-color: var(--border) !important; }
@@ -688,10 +691,14 @@
       margin: 0;
     }
     .bubble pre code { background: none; color: #e2e8f0; padding: 0; font-size: 0.81rem; line-height: 1.6; }
+    .bubble pre::-webkit-scrollbar { height: 4px; }
+    .bubble pre::-webkit-scrollbar-track { background: transparent; }
+    .bubble pre::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; opacity: 0.6; }
+    .bubble pre { scrollbar-width: thin; scrollbar-color: var(--accent) transparent; }
 
     .copy-btn {
-      background: #1e1e1e;
-      border: none;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
       color: #888;
       font-size: 0.67rem;
       padding: 0.16rem 0.42rem;
@@ -699,7 +706,9 @@
       cursor: pointer;
       flex-shrink: 0;
     }
-    .copy-btn:hover { background: #2a2a2a; color: #fff; }
+    .copy-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+    body.light .copy-btn { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.1); color: #666; }
+    body.light .copy-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
 
     .thinking { display: flex; gap: 4px; padding: 0.45rem 0.2rem; }
     .thinking span { width: 5px; height: 5px; background: #444; border-radius: 50%; animation: bounce 1.2s infinite; }
@@ -760,7 +769,7 @@
     .btn-send {
       width: 36px;
       height: 36px;
-      background: #f97316;
+      background: var(--accent);
       border: none;
       border-radius: 10px;
       color: #fff;
@@ -1044,7 +1053,6 @@
 
   /* ── Init ── */
   function init() {
-    initAppearance();
     apiKey   = localStorage.getItem(KEY_STORE) || "";
     userName = localStorage.getItem(NAME_STORE) || "";
     chats    = JSON.parse(localStorage.getItem(CHATS_STORE) || "{}");
@@ -1053,6 +1061,7 @@
     sidebarOpen = savedSidebar !== "0";
     applyLayout(); // sets layout class + sidebar state without animation
     if (apiKey && userName) showApp();
+    initAppearance();
   }
 
   // "horizontal" = side panel (desktop/landscape), "vertical" = top drawer (portrait/mobile)
