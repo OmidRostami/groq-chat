@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gemini Chat</title>
+  <title>AI Chat</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -16,7 +16,6 @@
       flex-direction: column;
     }
 
-    /* ── Setup screen ── */
     #setup {
       flex: 1;
       display: flex;
@@ -48,14 +47,13 @@
       line-height: 1.5;
     }
 
-    .setup-card p a { color: #4ade80; text-decoration: none; }
+    .setup-card p a { color: #f97316; text-decoration: none; }
 
     label {
       display: block;
       font-size: 0.8rem;
       color: #aaa;
       margin-bottom: 0.4rem;
-      letter-spacing: 0.03em;
     }
 
     input[type="password"] {
@@ -71,12 +69,12 @@
       transition: border-color 0.15s;
     }
 
-    input:focus { border-color: #16a34a; }
+    input:focus { border-color: #f97316; }
 
     .btn-primary {
       width: 100%;
       padding: 0.7rem;
-      background: #16a34a;
+      background: #f97316;
       color: #fff;
       border: none;
       border-radius: 8px;
@@ -86,7 +84,7 @@
       transition: background 0.15s;
     }
 
-    .btn-primary:hover { background: #15803d; }
+    .btn-primary:hover { background: #ea6c0a; }
 
     .error-msg {
       font-size: 0.82rem;
@@ -95,7 +93,6 @@
       display: none;
     }
 
-    /* ── Chat screen ── */
     #chat {
       display: none;
       flex-direction: column;
@@ -118,7 +115,12 @@
       color: #d4d4d4;
     }
 
-    .btn-reset {
+    .header-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-small {
       font-size: 0.78rem;
       color: #666;
       background: none;
@@ -129,7 +131,7 @@
       transition: color 0.15s, border-color 0.15s;
     }
 
-    .btn-reset:hover { color: #f87171; border-color: #f87171; }
+    .btn-small:hover { color: #f87171; border-color: #f87171; }
 
     .messages {
       flex: 1;
@@ -162,7 +164,7 @@
       font-weight: 600;
     }
 
-    .msg.user .avatar { background: #16a34a; color: #fff; }
+    .msg.user .avatar { background: #f97316; color: #fff; }
     .msg.assistant .avatar { background: #1e1e1e; color: #aaa; border: 1px solid #2e2e2e; }
 
     .bubble {
@@ -176,9 +178,9 @@
     }
 
     .msg.user .bubble {
-      background: #052e16;
-      border: 1px solid #14532d;
-      color: #bbf7d0;
+      background: #1c1008;
+      border: 1px solid #7c2d12;
+      color: #fed7aa;
       border-radius: 12px 4px 12px 12px;
     }
 
@@ -211,7 +213,6 @@
       40% { transform: translateY(-6px); }
     }
 
-    /* ── Input bar ── */
     .input-bar {
       padding: 1rem;
       border-top: 1px solid #1e1e1e;
@@ -238,12 +239,12 @@
       font-family: inherit;
     }
 
-    textarea:focus { border-color: #16a34a; }
+    textarea:focus { border-color: #f97316; }
 
     .btn-send {
       width: 42px;
       height: 42px;
-      background: #16a34a;
+      background: #f97316;
       border: none;
       border-radius: 8px;
       color: #fff;
@@ -256,34 +257,33 @@
       transition: background 0.15s;
     }
 
-    .btn-send:hover { background: #15803d; }
+    .btn-send:hover { background: #ea6c0a; }
     .btn-send:disabled { background: #2e2e2e; cursor: not-allowed; }
   </style>
 </head>
 <body>
 
-<!-- Setup screen -->
 <div id="setup">
   <div class="setup-card">
-    <h1>Gemini Chat</h1>
+    <h1>AI Chat</h1>
     <p>
-      Enter your <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio API key</a>.
-      It's free and saved only in your browser.
+      Enter your <a href="https://console.groq.com/keys" target="_blank">Groq API key</a>.
+      Free, fast, and saved only in your browser.
     </p>
-
-    <label for="apiKey">Gemini API Key</label>
-    <input type="password" id="apiKey" placeholder="AIza..." />
-
+    <label for="apiKey">Groq API Key</label>
+    <input type="password" id="apiKey" placeholder="gsk_..." />
     <button class="btn-primary" onclick="saveSettings()">Save and start chatting</button>
     <p class="error-msg" id="setupError"></p>
   </div>
 </div>
 
-<!-- Chat screen -->
 <div id="chat">
   <div class="chat-header">
-    <span>Gemini Chat</span>
-    <button class="btn-reset" onclick="resetSettings()">Change API key</button>
+    <span>AI Chat</span>
+    <div class="header-buttons">
+      <button class="btn-small" onclick="clearChat()">Clear chat</button>
+      <button class="btn-small" onclick="signOut()">Sign out</button>
+    </div>
   </div>
   <div class="messages" id="messages"></div>
   <div class="input-bar">
@@ -294,8 +294,8 @@
 </div>
 
 <script>
-  const STORAGE_KEY = "gemini_api_key";
-  const MODEL = "gemini-2.0-flash";
+  const STORAGE_KEY = "groq_api_key";
+  const MODEL = "llama-3.3-70b-versatile";
 
   let history = [];
   let apiKey = "";
@@ -305,34 +305,36 @@
     if (saved) {
       apiKey = saved;
       showChat();
-    } else {
-      document.getElementById("setup").style.display = "flex";
     }
   }
 
   function saveSettings() {
     const key = document.getElementById("apiKey").value.trim();
     const err = document.getElementById("setupError");
-
     if (key.length < 10) {
-      err.textContent = "Key looks too short, please check it";
+      err.textContent = "Please enter a valid API key";
       err.style.display = "block";
       return;
     }
-
     localStorage.setItem(STORAGE_KEY, key);
     apiKey = key;
     err.style.display = "none";
     showChat();
   }
 
-  function resetSettings() {
+  function signOut() {
     localStorage.removeItem(STORAGE_KEY);
+    apiKey = "";
     history = [];
     document.getElementById("messages").innerHTML = "";
     document.getElementById("chat").style.display = "none";
     document.getElementById("setup").style.display = "flex";
     document.getElementById("apiKey").value = "";
+  }
+
+  function clearChat() {
+    history = [];
+    document.getElementById("messages").innerHTML = "";
   }
 
   function showChat() {
@@ -348,7 +350,7 @@
 
     const avatar = document.createElement("div");
     avatar.className = "avatar";
-    avatar.textContent = role === "user" ? "U" : "G";
+    avatar.textContent = role === "user" ? "U" : "AI";
 
     const bubble = document.createElement("div");
     bubble.className = "bubble";
@@ -376,30 +378,31 @@
     document.getElementById("sendBtn").disabled = true;
 
     appendMessage("user", text);
-
-    // Build Gemini conversation history
-    history.push({ role: "user", parts: [{ text }] });
+    history.push({ role: "user", content: text });
 
     const thinkingBubble = appendMessage("assistant", "", true);
 
     try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: history }),
-        }
-      );
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: history,
+        }),
+      });
 
       const data = await res.json();
 
       if (data.error) {
         thinkingBubble.textContent = "Error: " + data.error.message;
       } else {
-        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "(no response)";
+        const reply = data.choices?.[0]?.message?.content || "(no response)";
         thinkingBubble.textContent = reply;
-        history.push({ role: "model", parts: [{ text: reply }] });
+        history.push({ role: "assistant", content: reply });
       }
     } catch (e) {
       thinkingBubble.textContent = "Network error: " + e.message;
